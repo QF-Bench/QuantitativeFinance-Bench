@@ -5,3 +5,12 @@ FROM finance-bench-sandbox:latest
 WORKDIR /app
 
 COPY data/prices_dirty.csv /app/prices_dirty.csv
+
+# Copy skills to agent-specific locations
+COPY skills /root/.claude/skills
+COPY skills /etc/claude-code/.claude/skills
+COPY skills /root/.codex/skills
+COPY skills /root/.opencode/skill
+COPY skills /root/.goose/skills
+COPY skills /root/.factory/skills
+COPY skills /root/.agents/skills
