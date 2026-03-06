@@ -1,0 +1,168 @@
+{
+  "checkpoints": {
+    "mean_excess_0": {
+      "value": 0.0004352836062420062,
+      "concept": "stats.descriptive",
+      "domain": "STAT",
+      "tolerance": {
+        "rtol": 0.02,
+        "atol": 1e-06
+      },
+      "siblings": {}
+    },
+    "mean_excess_1": {
+      "value": 0.0015407780227931272,
+      "concept": "stats.descriptive",
+      "domain": "STAT",
+      "tolerance": {
+        "rtol": 0.02,
+        "atol": 1e-06
+      },
+      "siblings": {}
+    },
+    "mean_excess_2": {
+      "value": 2.1627897865250222e-07,
+      "concept": "stats.descriptive",
+      "domain": "STAT",
+      "tolerance": {
+        "rtol": 0.02,
+        "atol": 1e-06
+      },
+      "siblings": {}
+    },
+    "cov_00": {
+      "value": 0.0001934867933433063,
+      "concept": "stats.covariance",
+      "domain": "STAT",
+      "tolerance": {
+        "rtol": 0.02
+      },
+      "siblings": {}
+    },
+    "cov_01": {
+      "value": 0.000130120464930005,
+      "concept": "stats.covariance",
+      "domain": "STAT",
+      "tolerance": {
+        "rtol": 0.05
+      },
+      "siblings": {}
+    },
+    "cov_12": {
+      "value": 1.835677975475398e-05,
+      "concept": "stats.covariance",
+      "domain": "STAT",
+      "tolerance": {
+        "rtol": 0.05
+      },
+      "siblings": {}
+    },
+    "kelly_fraction_0": {
+      "value": -0.16846158164731878,
+      "concept": "pm.kelly_criterion",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.05
+      },
+      "siblings": {}
+    },
+    "kelly_fraction_1": {
+      "value": 3.7578944298119783,
+      "concept": "pm.kelly_criterion",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.05
+      },
+      "siblings": {}
+    },
+    "kelly_fraction_2": {
+      "value": -0.6095719328309842,
+      "concept": "pm.kelly_criterion",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.05
+      },
+      "siblings": {}
+    },
+    "total_kelly_leverage": {
+      "value": 4.535927944290282,
+      "concept": "pm.kelly_criterion",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 0.01
+      },
+      "siblings": {}
+    },
+    "portfolio_var_full": {
+      "value": 0.17589129593439656,
+      "concept": "risk.var",
+      "domain": "RISK",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 0.005
+      },
+      "siblings": {}
+    },
+    "var_scale_factor": {
+      "value": 0.1705598895080591,
+      "concept": "risk.var",
+      "domain": "RISK",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 0.01
+      },
+      "siblings": {}
+    },
+    "theoretical_growth_full": {
+      "value": 0.0028583103735316407,
+      "concept": "pm.growth_rate",
+      "domain": "PM",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 1e-05
+      },
+      "siblings": {}
+    },
+    "theoretical_growth_var": {
+      "value": 0.0008918760222548462,
+      "concept": "pm.growth_rate",
+      "domain": "PM",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 1e-05
+      },
+      "siblings": {}
+    },
+    "theoretical_growth_half": {
+      "value": 0.0021437327801487305,
+      "concept": "pm.growth_rate",
+      "domain": "PM",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 1e-05
+      },
+      "siblings": {}
+    },
+    "theoretical_growth_equal": {
+      "value": 0.0005986627511467967,
+      "concept": "pm.growth_rate",
+      "domain": "PM",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 1e-05
+      },
+      "siblings": {}
+    },
+    "mean_terminal_wealth_full": {
+      "value": 4757522.332241214,
+      "concept": "mc.simulation",
+      "domain": "SIM",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 1000
+      },
+      "siblings": {}
+    }
+  }
+}
