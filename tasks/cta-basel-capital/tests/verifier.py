@@ -22,17 +22,8 @@ import json
 import math
 import os
 import sys
-from pathlib import Path
-from typing import Any
-
-
-# ══════════════════════════════════════════════════════════════════════
-# Tolerance checking
-# ══════════════════════════════════════════════════════════════════════
-
 def _check_scalar(actual: float, expected: float, tol: dict) -> bool:
     """Check scalar within tolerance."""
-    import math
     if math.isnan(expected):
         return math.isnan(actual)  # NaN matches NaN
     if math.isnan(actual):
@@ -45,6 +36,13 @@ def _check_scalar(actual: float, expected: float, tol: dict) -> bool:
         if rtol is not None and actual == 0:
             return True
         return False
+    rtol = tol.get("rtol")
+    atol = tol.get("atol")
+    if rtol is not None and abs(actual - expected) / abs(expected) <= rtol:
+        return True
+    if atol is not None and abs(actual - expected) <= atol:
+        return True
+    return False
     rtol = tol.get("rtol")
     atol = tol.get("atol")
     if rtol is not None and abs(actual - expected) / abs(expected) <= rtol:
