@@ -15,7 +15,7 @@ TASK_META = {
     "task_id": "kelly-var-sizing",
     "seed": 42,
     "tier": 3,
-    "domains": ["STAT", "CQF", "RISK", "PERF", "SIM"],
+    "domains": ["STAT", "CQF", "RISK", "PM", "SIM"],
 }
 
 
