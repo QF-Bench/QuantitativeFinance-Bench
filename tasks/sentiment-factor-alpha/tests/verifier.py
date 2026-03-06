@@ -283,17 +283,7 @@ def check_intermediates(
 
                 if matched_sibling:
                     # Value matches a sibling — is it convention or mislabeling?
-                    if term_name != list(checkpoints_ref.keys())[
-                        list(checkpoints_ref.keys()).index(term_name)
-                    ]:
-                        error_class = "mislabeling"
-                    else:
-                if matched_sibling:
-                    # Value matches a sibling — is it convention or mislabeling?
                     if term_name != matched_sibling:
-                        error_class = "mislabeling"
-                    else:
-                        error_class = "convention"
                         error_class = "mislabeling"
                     else:
                         error_class = "convention"
