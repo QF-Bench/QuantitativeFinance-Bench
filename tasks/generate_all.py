@@ -1248,9 +1248,6 @@ def solve_sentiment(prices_data=None, dates=None, tickers=None,
     date_to_mkt = {dates[i]: mkt_rf[i] for i in range(N_DAYS)}
     mkt_aligned = np.array([date_to_mkt.get(d, 0.0) for d in portfolio_dates])
 
-    alpha_daily = float(intercept)
-    beta = float(slope)
-    r_squared = float(r_value ** 2)
     result = stats.linregress(mkt_aligned, portfolio_returns)
     slope, intercept, r_value, p_value, stderr = (
         result.slope, result.intercept, result.rvalue,
