@@ -405,7 +405,7 @@ def _check_edges(intermediates: dict, concept_sub: dict) -> dict:
             visited = set()
         if node in visited:
             return False
-        visited.add(node)
+        visited.add(ancestor)
         for child in children.get(ancestor, set()):
             if child == node or is_descendant(node, child, visited):
                 return True
