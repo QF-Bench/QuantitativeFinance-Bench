@@ -288,6 +288,9 @@ def check_intermediates(
                     ]:
                         error_class = "mislabeling"
                     else:
+                    if term_name != matched_sibling:
+                        error_class = "mislabeling"
+                    else:
                         error_class = "convention"
                 else:
                     error_class = "computation"
