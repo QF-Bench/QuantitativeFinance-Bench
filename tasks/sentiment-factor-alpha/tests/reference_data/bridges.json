@@ -5,7 +5,7 @@
       "to_node": "pm.momentum_signal",
       "from_domain": "NLP",
       "to_domain": "PM",
-      "description": "Engagement-weighted sentiment scores feed momentum differencing to produce cross-sectional trading signal. NLP is a novel domain not present in the FAMA knowledge graph.",
+      "description": "Engagement-weighted sentiment scores feed momentum differencing to produce cross-sectional trading signal. NLP is a novel domain not present in the standard financial knowledge graph.",
       "certifications": ["NLP_NOVEL"]
     },
     {
