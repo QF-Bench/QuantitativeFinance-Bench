@@ -7,11 +7,8 @@
 
 You are given daily close prices for 8 assets, social-media posts with
 engagement metrics, a sentiment word list, and a daily market-factor
-series. Score posts using lexicon-based sentiment with engagement
-weighting, construct a cross-sectional momentum signal, build a daily
-long-short portfolio, compute the Spearman information coefficient
-between signals and next-day returns, and run an OLS regression of
-portfolio returns against the market factor to extract alpha and beta.
+series. Build a sentiment-based long-short equity strategy and evaluate
+its signal quality and risk-adjusted performance.
 
 ## Input Files
 
@@ -36,14 +33,16 @@ portfolio returns against the market factor to extract alpha and beta.
 
 ```json
 {
+  "num_scored_nonzero": <int>,  // posts with nonzero sentiment score after engagement weighting
+  "mean_weighted_score": <float>, // mean of nonzero final scores
   "total_return": <float>,
   "annualized_return": <float>,
   "sharpe_ratio": <float>,
   "max_drawdown": <float>,
-  "mean_ic": <float>,
-  "ic_ir": <float>,
-  "alpha_annualized": <float>,
-  "beta": <float>
+  "mean_ic": <float>,          // mean Spearman rank IC (signal vs next-day return)
+  "ic_ir": <float>,            // IC information ratio (mean IC / std IC)
+  "alpha_annualized": <float>, // annualised Jensen's alpha from single-factor market regression
+  "beta": <float>              // market beta from single-factor regression
 }
 ```
 
@@ -73,7 +72,7 @@ Report intermediate checkpoints (used for partial scoring):
 }
 ```
 
-## Constraints
+## Conventions
 
 - Python 3.11+ with numpy, pandas, scipy available.
 - Text tokenisation: lowercase, split on whitespace, strip
@@ -87,9 +86,7 @@ Report intermediate checkpoints (used for partial scoring):
 - Position weights: 1 / (long_top_n + short_bottom_n) per position.
 - Transaction cost: sum of absolute weight changes × cost_bps / 10000,
   deducted from daily return.
-- IC: Spearman rank correlation. Skip days with < 3 valid tickers.
-  IC_IR = mean(IC) / std(IC, ddof=1).
-- OLS: `scipy.stats.linregress`. Annualise alpha by × 252 (simple
-  multiplication).
-- Sharpe: annualised with √252, ddof=1.
+- Sharpe ratio: annualised with √252, using std with ddof=1.
 - Maximum drawdown: report as positive magnitude.
+- Annualise alpha by × 252 (simple multiplication).
+- Spearman IC: skip days with fewer than 3 valid tickers.

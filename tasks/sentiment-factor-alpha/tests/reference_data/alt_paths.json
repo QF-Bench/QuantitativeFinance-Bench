@@ -7,6 +7,23 @@
       "primary": true,
       "deliverables": [
         {
+          "name": "num_scored_nonzero",
+          "value": 17155,
+          "path": "results.json:num_scored_nonzero",
+          "tolerance": {
+            "atol": 0
+          }
+        },
+        {
+          "name": "mean_weighted_score",
+          "value": 0.052904724235956185,
+          "path": "results.json:mean_weighted_score",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
           "name": "total_return",
           "value": -0.18750171793636994,
           "path": "results.json:total_return",
@@ -232,6 +249,23 @@
       "description": "drawdown=negative (natural sign), otherwise same as primary",
       "primary": false,
       "deliverables": [
+        {
+          "name": "num_scored_nonzero",
+          "value": 17155,
+          "path": "results.json:num_scored_nonzero",
+          "tolerance": {
+            "atol": 0
+          }
+        },
+        {
+          "name": "mean_weighted_score",
+          "value": 0.052904724235956185,
+          "path": "results.json:mean_weighted_score",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
         {
           "name": "total_return",
           "value": -0.18750171793636994,
@@ -459,6 +493,23 @@
       "primary": false,
       "deliverables": [
         {
+          "name": "num_scored_nonzero",
+          "value": 17155,
+          "path": "results.json:num_scored_nonzero",
+          "tolerance": {
+            "atol": 0
+          }
+        },
+        {
+          "name": "mean_weighted_score",
+          "value": 0.052904724235956185,
+          "path": "results.json:mean_weighted_score",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
           "name": "total_return",
           "value": -0.18750171793636994,
           "path": "results.json:total_return",
@@ -684,6 +735,23 @@
       "description": "IC_IR uses std(ddof=0), otherwise same as primary",
       "primary": false,
       "deliverables": [
+        {
+          "name": "num_scored_nonzero",
+          "value": 17155,
+          "path": "results.json:num_scored_nonzero",
+          "tolerance": {
+            "atol": 0
+          }
+        },
+        {
+          "name": "mean_weighted_score",
+          "value": 0.052904724235956185,
+          "path": "results.json:mean_weighted_score",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
         {
           "name": "total_return",
           "value": -0.18750171793636994,
@@ -911,6 +979,23 @@
       "primary": false,
       "deliverables": [
         {
+          "name": "num_scored_nonzero",
+          "value": 17155,
+          "path": "results.json:num_scored_nonzero",
+          "tolerance": {
+            "atol": 0
+          }
+        },
+        {
+          "name": "mean_weighted_score",
+          "value": 0.052904724235956185,
+          "path": "results.json:mean_weighted_score",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
           "name": "total_return",
           "value": -0.18065493973903712,
           "path": "results.json:total_return",
@@ -1136,6 +1221,23 @@
       "description": "annualized_return as CAGR=(1+total)^(252/n)-1, otherwise same as primary",
       "primary": false,
       "deliverables": [
+        {
+          "name": "num_scored_nonzero",
+          "value": 17155,
+          "path": "results.json:num_scored_nonzero",
+          "tolerance": {
+            "atol": 0
+          }
+        },
+        {
+          "name": "mean_weighted_score",
+          "value": 0.052904724235956185,
+          "path": "results.json:mean_weighted_score",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
         {
           "name": "total_return",
           "value": -0.18750171793636994,
