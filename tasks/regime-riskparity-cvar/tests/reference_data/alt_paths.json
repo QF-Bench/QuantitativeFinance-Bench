@@ -1,0 +1,713 @@
+{
+  "_comment": "Values are null placeholders \u2014 fill after data generation.",
+  "paths": [
+    {
+      "name": "primary",
+      "description": "drawdown=positive, cvar=positive, rebalance=last_trading_day_of_month",
+      "primary": true,
+      "deliverables": [
+        {
+          "name": "annualized_return",
+          "value": 0.016915004340094384,
+          "path": "results.json:annualized_return",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "annualized_volatility",
+          "value": 0.08471914624301376,
+          "path": "results.json:annualized_volatility",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "sharpe_ratio",
+          "value": 0.19965975921870502,
+          "path": "results.json:sharpe_ratio",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.02
+          }
+        },
+        {
+          "name": "max_drawdown",
+          "value": 0.13390063511860548,
+          "path": "results.json:max_drawdown",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "cvar",
+          "value": 0.005880597997185525,
+          "path": "results.json:cvar",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          }
+        }
+      ],
+      "checkpoints": {
+        "num_regime_observations": {
+          "value": 693,
+          "concept": "stats.descriptive",
+          "domain": "STAT",
+          "tolerance": {
+            "atol": 0
+          },
+          "siblings": {}
+        },
+        "mp_threshold": {
+          "value": 2.2139953110437713,
+          "concept": "rmt.marchenko_pastur",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.001
+          },
+          "siblings": {}
+        },
+        "mean_absorption_ratio": {
+          "value": 0.5054430175272547,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "std_absorption_ratio": {
+          "value": 0.12753648336178208,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "mean_largest_eigenvalue": {
+          "value": 4.475667039733495,
+          "concept": "rmt.eigenvalue",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02
+          },
+          "siblings": {}
+        },
+        "regime_count_crisis": {
+          "value": 144,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_off": {
+          "value": 291,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_on": {
+          "value": 258,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "num_rebalances": {
+          "value": 32,
+          "concept": "pm.rebalancing",
+          "domain": "PM",
+          "tolerance": {
+            "atol": 1
+          },
+          "siblings": {}
+        },
+        "mean_weight_stock_01": {
+          "value": 0.0626212267325759,
+          "concept": "pm.risk_parity",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "portfolio_var_99": {
+          "value": 0.004762074511742144,
+          "concept": "risk.var",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "cvar": {
+          "value": 0.005880597997185525,
+          "concept": "risk.cvar",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "win_rate": {
+          "value": 0.5238095238095238,
+          "concept": "pm.performance_metrics",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          },
+          "siblings": {}
+        }
+      }
+    },
+    {
+      "name": "signs_negative",
+      "description": "drawdown=negative, cvar=negative (natural sign convention)",
+      "primary": false,
+      "deliverables": [
+        {
+          "name": "annualized_return",
+          "value": 0.016915004340094384,
+          "path": "results.json:annualized_return",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "annualized_volatility",
+          "value": 0.08471914624301376,
+          "path": "results.json:annualized_volatility",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "sharpe_ratio",
+          "value": 0.19965975921870502,
+          "path": "results.json:sharpe_ratio",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.02
+          }
+        },
+        {
+          "name": "max_drawdown",
+          "value": -0.13390063511860548,
+          "path": "results.json:max_drawdown",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "cvar",
+          "value": -0.005880597997185525,
+          "path": "results.json:cvar",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          }
+        }
+      ],
+      "checkpoints": {
+        "num_regime_observations": {
+          "value": 693,
+          "concept": "stats.descriptive",
+          "domain": "STAT",
+          "tolerance": {
+            "atol": 0
+          },
+          "siblings": {}
+        },
+        "mp_threshold": {
+          "value": 2.2139953110437713,
+          "concept": "rmt.marchenko_pastur",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.001
+          },
+          "siblings": {}
+        },
+        "mean_absorption_ratio": {
+          "value": 0.5054430175272547,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "std_absorption_ratio": {
+          "value": 0.12753648336178208,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "mean_largest_eigenvalue": {
+          "value": 4.475667039733495,
+          "concept": "rmt.eigenvalue",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02
+          },
+          "siblings": {}
+        },
+        "regime_count_crisis": {
+          "value": 144,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_off": {
+          "value": 291,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_on": {
+          "value": 258,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "num_rebalances": {
+          "value": 32,
+          "concept": "pm.rebalancing",
+          "domain": "PM",
+          "tolerance": {
+            "atol": 1
+          },
+          "siblings": {}
+        },
+        "mean_weight_stock_01": {
+          "value": 0.0626212267325759,
+          "concept": "pm.risk_parity",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "portfolio_var_99": {
+          "value": -0.004762074511742144,
+          "concept": "risk.var",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "cvar": {
+          "value": -0.005880597997185525,
+          "concept": "risk.cvar",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "win_rate": {
+          "value": 0.5238095238095238,
+          "concept": "pm.performance_metrics",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          },
+          "siblings": {}
+        }
+      }
+    },
+    {
+      "name": "rebalance_first_of_month",
+      "description": "rebalance=first_trading_day_of_next_month, drawdown=positive, cvar=positive",
+      "primary": false,
+      "deliverables": [
+        {
+          "name": "annualized_return",
+          "value": 0.014736774903222706,
+          "path": "results.json:annualized_return",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "annualized_volatility",
+          "value": 0.08485380889369055,
+          "path": "results.json:annualized_volatility",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "sharpe_ratio",
+          "value": 0.17367252095525534,
+          "path": "results.json:sharpe_ratio",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.02
+          }
+        },
+        {
+          "name": "max_drawdown",
+          "value": 0.13457659367429642,
+          "path": "results.json:max_drawdown",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "cvar",
+          "value": 0.00587401264939166,
+          "path": "results.json:cvar",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          }
+        }
+      ],
+      "checkpoints": {
+        "num_regime_observations": {
+          "value": 693,
+          "concept": "stats.descriptive",
+          "domain": "STAT",
+          "tolerance": {
+            "atol": 0
+          },
+          "siblings": {}
+        },
+        "mp_threshold": {
+          "value": 2.2139953110437713,
+          "concept": "rmt.marchenko_pastur",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.001
+          },
+          "siblings": {}
+        },
+        "mean_absorption_ratio": {
+          "value": 0.5054430175272547,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "std_absorption_ratio": {
+          "value": 0.12753648336178208,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "mean_largest_eigenvalue": {
+          "value": 4.475667039733495,
+          "concept": "rmt.eigenvalue",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02
+          },
+          "siblings": {}
+        },
+        "regime_count_crisis": {
+          "value": 144,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_off": {
+          "value": 291,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_on": {
+          "value": 258,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "num_rebalances": {
+          "value": 32,
+          "concept": "pm.rebalancing",
+          "domain": "PM",
+          "tolerance": {
+            "atol": 1
+          },
+          "siblings": {}
+        },
+        "mean_weight_stock_01": {
+          "value": 0.06260785101563765,
+          "concept": "pm.risk_parity",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "portfolio_var_99": {
+          "value": 0.004732912985668541,
+          "concept": "risk.var",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "cvar": {
+          "value": 0.00587401264939166,
+          "concept": "risk.cvar",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "win_rate": {
+          "value": 0.5223665223665224,
+          "concept": "pm.performance_metrics",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          },
+          "siblings": {}
+        }
+      }
+    },
+    {
+      "name": "inv_vol_ddof0",
+      "description": "inverse-vol weights use std(ddof=0), otherwise same as primary",
+      "primary": false,
+      "deliverables": [
+        {
+          "name": "annualized_return",
+          "value": 0.016915004340094388,
+          "path": "results.json:annualized_return",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "annualized_volatility",
+          "value": 0.08471914624301376,
+          "path": "results.json:annualized_volatility",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          }
+        },
+        {
+          "name": "sharpe_ratio",
+          "value": 0.19965975921870505,
+          "path": "results.json:sharpe_ratio",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.02
+          }
+        },
+        {
+          "name": "max_drawdown",
+          "value": 0.13390063511860545,
+          "path": "results.json:max_drawdown",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "cvar",
+          "value": 0.005880597997185526,
+          "path": "results.json:cvar",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          }
+        }
+      ],
+      "checkpoints": {
+        "num_regime_observations": {
+          "value": 693,
+          "concept": "stats.descriptive",
+          "domain": "STAT",
+          "tolerance": {
+            "atol": 0
+          },
+          "siblings": {}
+        },
+        "mp_threshold": {
+          "value": 2.2139953110437713,
+          "concept": "rmt.marchenko_pastur",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.001
+          },
+          "siblings": {}
+        },
+        "mean_absorption_ratio": {
+          "value": 0.5054430175272547,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "std_absorption_ratio": {
+          "value": 0.12753648336178208,
+          "concept": "rmt.absorption_ratio",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "mean_largest_eigenvalue": {
+          "value": 4.475667039733495,
+          "concept": "rmt.eigenvalue",
+          "domain": "CQF",
+          "tolerance": {
+            "rtol": 0.02
+          },
+          "siblings": {}
+        },
+        "regime_count_crisis": {
+          "value": 144,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_off": {
+          "value": 291,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "regime_count_risk_on": {
+          "value": 258,
+          "concept": "rmt.regime_detection",
+          "domain": "CQF",
+          "tolerance": {
+            "atol": 2
+          },
+          "siblings": {}
+        },
+        "num_rebalances": {
+          "value": 32,
+          "concept": "pm.rebalancing",
+          "domain": "PM",
+          "tolerance": {
+            "atol": 1
+          },
+          "siblings": {}
+        },
+        "mean_weight_stock_01": {
+          "value": 0.06262122673257592,
+          "concept": "pm.risk_parity",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "portfolio_var_99": {
+          "value": 0.004762074511742144,
+          "concept": "risk.var",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "cvar": {
+          "value": 0.005880597997185526,
+          "concept": "risk.cvar",
+          "domain": "RISK",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.005
+          },
+          "siblings": {}
+        },
+        "win_rate": {
+          "value": 0.5238095238095238,
+          "concept": "pm.performance_metrics",
+          "domain": "PM",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          },
+          "siblings": {}
+        }
+      }
+    }
+  ]
+}

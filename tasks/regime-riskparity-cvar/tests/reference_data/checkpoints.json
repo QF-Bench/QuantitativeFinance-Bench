@@ -1,0 +1,127 @@
+{
+  "checkpoints": {
+    "num_regime_observations": {
+      "value": 693,
+      "concept": "stats.descriptive",
+      "domain": "STAT",
+      "tolerance": {
+        "atol": 0
+      },
+      "siblings": {}
+    },
+    "mp_threshold": {
+      "value": 2.2139953110437713,
+      "concept": "rmt.marchenko_pastur",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.001
+      },
+      "siblings": {}
+    },
+    "mean_absorption_ratio": {
+      "value": 0.5054430175272547,
+      "concept": "rmt.absorption_ratio",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.02,
+        "atol": 0.005
+      },
+      "siblings": {}
+    },
+    "std_absorption_ratio": {
+      "value": 0.12753648336178208,
+      "concept": "rmt.absorption_ratio",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 0.005
+      },
+      "siblings": {}
+    },
+    "mean_largest_eigenvalue": {
+      "value": 4.475667039733495,
+      "concept": "rmt.eigenvalue",
+      "domain": "CQF",
+      "tolerance": {
+        "rtol": 0.02
+      },
+      "siblings": {}
+    },
+    "regime_count_crisis": {
+      "value": 144,
+      "concept": "rmt.regime_detection",
+      "domain": "CQF",
+      "tolerance": {
+        "atol": 2
+      },
+      "siblings": {}
+    },
+    "regime_count_risk_off": {
+      "value": 291,
+      "concept": "rmt.regime_detection",
+      "domain": "CQF",
+      "tolerance": {
+        "atol": 2
+      },
+      "siblings": {}
+    },
+    "regime_count_risk_on": {
+      "value": 258,
+      "concept": "rmt.regime_detection",
+      "domain": "CQF",
+      "tolerance": {
+        "atol": 2
+      },
+      "siblings": {}
+    },
+    "num_rebalances": {
+      "value": 32,
+      "concept": "pm.rebalancing",
+      "domain": "PM",
+      "tolerance": {
+        "atol": 1
+      },
+      "siblings": {}
+    },
+    "mean_weight_stock_01": {
+      "value": 0.0626212267325759,
+      "concept": "pm.risk_parity",
+      "domain": "PM",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 0.005
+      },
+      "siblings": {}
+    },
+    "portfolio_var_99": {
+      "value": 0.004762074511742144,
+      "concept": "risk.var",
+      "domain": "RISK",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 0.005
+      },
+      "siblings": {}
+    },
+    "cvar": {
+      "value": 0.005880597997185525,
+      "concept": "risk.cvar",
+      "domain": "RISK",
+      "tolerance": {
+        "rtol": 0.05,
+        "atol": 0.005
+      },
+      "siblings": {}
+    },
+    "win_rate": {
+      "value": 0.5238095238095238,
+      "concept": "pm.performance_metrics",
+      "domain": "PM",
+      "tolerance": {
+        "rtol": 0.02,
+        "atol": 0.01
+      },
+      "siblings": {}
+    }
+  }
+}
