@@ -104,8 +104,8 @@ plt.tight_layout()
 plt.savefig(str(output_dir / "kmeans_elbow_silhouette.png"), dpi=100)
 plt.close()
 
-# Final K-Means
-nclust_km = 6
+# Final K-Means (best k from silhouette)
+nclust_km = best_k
 k_means = KMeans(n_clusters=nclust_km, random_state=10, n_init=10)
 k_means.fit(X)
 centroids = k_means.cluster_centers_
