@@ -31,7 +31,7 @@ We need a comprehensive Greeks analysis for European and Asian options using Mon
 | **Theta** | h = 1/252 | Time shrinks by one business day | Divide by bump and multiply by −1: `-(V(T-h) - V(T)) / h` → dollars per day (theta decay) |
 | **Rho** | h = 0.001 | Rate changes by 0.001 (10 basis points) | Divide by bump: `(V(r+0.001) - V(r-0.001)) / 0.002` → dollars per 1% rate change |
 
-**Critical**: Use **central differences** for all Greeks. Ensure the same random seed is used for base and bumped simulations (do not re-initialize the RNG).
+Use **central differences** for all Greeks.
 
 ### Greeks Surface Grids
 - **Spot grid**: 13 points from 70 to 130
@@ -45,7 +45,7 @@ We need a comprehensive Greeks analysis for European and Asian options using Mon
 
 Simulate asset paths under the risk-neutral measure using **geometric Brownian motion** with continuous dividend yield. For European options, paths end at maturity T. For Asian options, record intermediate spot prices at 12 equally-spaced monitoring dates.
 
-**Critical requirement**: Initialize `RandomState(42)` at the very start. All simulations—base, bumped, and variance comparisons—must use the same seed to ensure reproducibility and proper correlation in finite-difference estimates.
+Initialize `RandomState(42)` at the very start.
 
 ---
 
@@ -68,31 +68,23 @@ For European options, also compute Black-Scholes reference prices for later vali
 For each of the four options, compute five Greeks using central differences:
 
 **Delta & Gamma (spot bumps):**
-- Compute option value at `S = S₀ + h` and `S = S₀ − h` using the same random numbers
 - Delta = `(V(S+h) − V(S−h)) / (2h)` (dollars per dollar of spot move)
 - Gamma = `(V(S+h) − 2V(S) + V(S−h)) / h²` (delta change per dollar)
 
 **Vega (volatility bump):**
-- Compute option value at `σ = σ + 0.01` and `σ = σ − 0.01` using the same random numbers
 - Vega = `(V(σ+0.01) − V(σ−0.01)) / 0.02` (dollars per 1% volatility change)
 
 **Theta (time bump, backward in time):**
-- Compute option value at `T' = T − h` (with h = 1/252) using the same random numbers
-- Theta = `−(V(T') − V(T)) / h` (dollars per day; the negative sign converts "time decay" to positive theta)
+- Theta = `−(V(T−h) − V(T)) / h` (dollars per day)
 
 **Rho (rate bump):**
-- Compute option value at `r = r + 0.001` and `r = r − 0.001` using the same random numbers
 - Rho = `(V(r+0.001) − V(r−0.001)) / 0.002` (dollars per 1% rate change)
-
-**Key requirement**: Do **not** re-initialize the random number generator between base and bumped simulations. Use the same seed and the same random draws for all three scenarios (base, bump up, bump down).
 
 ---
 
 ### Step 4: Pathwise (IPA) Greeks
 
-The pathwise method differentiates the payoff with respect to the underlying parameters. For a general payoff f(S), the pathwise delta is proportional to the indicator of ITM times the spot change.
-
-**Key insight**: The payoff is non-differentiable at the strike (kinked). To handle this, multiply the derivative by an indicator function that marks ITM states.
+The pathwise method differentiates the payoff with respect to the underlying parameters.
 
 **For European options:**
 - **Delta**: Indicator of ITM × (S_T / S₀) × e^(−rT). The result is in dollars per dollar of spot move.
@@ -101,12 +93,10 @@ The pathwise method differentiates the payoff with respect to the underlying par
 - **Rho**: Use the score function for interest rates; output is in dollars per 1% rate change.
 - **Gamma**: NOT AVAILABLE — the indicator function is non-differentiable; report `null`
 
-**For Asian options (CRITICAL):**
-- **Delta**: Use the indicator of (average spot > strike) × (average of spot ratios)
-- **Vega**: Indicator × sum of vega-like terms across all monitoring dates
+**For Asian options:**
+- **Delta**: Differentiate the Asian payoff with respect to S₀.
+- **Vega**: Differentiate the Asian payoff with respect to σ.
 - **Gamma, Theta, Rho**: NOT AVAILABLE for Asian; report `null`
-
-**Why the indicator matters**: Without it, you're computing the derivative of the average (which exists everywhere), not the derivative of the option payoff (which is piecewise). This is a common pitfall.
 
 ---
 
@@ -118,11 +108,7 @@ The likelihood ratio method weights the payoff by the log-derivative of the unde
 
 - **Delta** (dollars per 1% spot move): Weight payoff by `Z / (S₀ σ √T)`. This produces the score function with respect to log-spot.
 
-- **Gamma** (delta per 1% spot move): Requires the second derivative of the log-likelihood. Has **two terms**:
-  - First term: `(Z² − 1) / (S₀² σ² T)` (curvature from second derivative)
-  - Second term: `−Z / (S₀² σ √T)` (Jacobian adjustment; arises when differentiating the normalizing constant)
-  - Both must be included; omitting the second term gives gamma ~50% too large
-  - Combined: `payoff × [(Z²−1)/(S₀²σ²T) − Z/(S₀²σ√T)]`
+- **Gamma** (delta per 1% spot move): Requires the second derivative of the log-likelihood with respect to log-spot.
 
 - **Vega** (dollars per 1% volatility change): Weight by `payoff × [(Z² − 1) / σ − Z√T]`. This is the score function with respect to log-volatility.
 
@@ -130,15 +116,12 @@ The likelihood ratio method weights the payoff by the log-derivative of the unde
 
 - **Theta**: NOT AVAILABLE — the score function for time is complex and model-dependent; report `null`
 
-**Scaling note**: All LR estimators produce output in the natural units (dollars per unit of parameter bump). No additional scaling needed.
-
-**Use the same random seed and paths as pathwise.** The goal is to have a direct comparison on the same MC sample set.
 
 ---
 
 ### Step 6: Variance Comparison
 
-For the European call, compute the sample variance of the delta estimator using both pathwise and LR methods across all 500,000 MC paths. The pathwise estimator should have **strictly lower variance** than LR for delta—this is a fundamental property of the pathwise method.
+For the European call, compute the sample variance of the delta estimator using both pathwise and LR methods across all 500,000 MC paths.
 
 Report both the variance and the standard error (SE) of the delta estimate under each method.
 

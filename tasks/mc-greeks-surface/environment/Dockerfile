@@ -1,2 +1,2 @@
-FROM python:3.11-slim
+FROM finance-bench-sandbox:latest
 WORKDIR /app
