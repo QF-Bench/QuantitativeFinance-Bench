@@ -251,8 +251,9 @@ for i, j in combinations(range(N_ev), 2):
         corr_vals.append(c)
 
 rho_bar   = float(np.mean(corr_vals)) if corr_vals else 0.0
-kp_t_full = float(bmp_full / np.sqrt(1.0 + (N_ev - 1) * rho_bar))
-kp_t_day0 = float(bmp_day0 / np.sqrt(1.0 + (N_ev - 1) * rho_bar))
+kp_adj = np.sqrt((1.0 - rho_bar) / (1.0 + (N_ev - 1) * rho_bar))
+kp_t_full = float(bmp_full * kp_adj)
+kp_t_day0 = float(bmp_day0 * kp_adj)
 
 stat_out = {
     "corrado_z_full": round(corrado_z_full, 8),
