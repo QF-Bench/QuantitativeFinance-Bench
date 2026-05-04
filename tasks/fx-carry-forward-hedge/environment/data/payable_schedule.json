@@ -1,0 +1,24 @@
+{
+  "_comment": "Corporate payable schedule for a US-based company. These are foreign currency payables that need hedging.",
+  "home_currency": "USD",
+  "payables": [
+    {
+      "currency": "EUR",
+      "amount": 10000000,
+      "due_date": "2023-12-05",
+      "description": "European supplier payment"
+    },
+    {
+      "currency": "GBP",
+      "amount": 8000000,
+      "due_date": "2023-12-05",
+      "description": "UK services contract"
+    },
+    {
+      "currency": "JPY",
+      "amount": 1200000000,
+      "due_date": "2023-12-05",
+      "description": "Japanese capex payment"
+    }
+  ]
+}

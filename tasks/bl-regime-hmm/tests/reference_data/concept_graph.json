@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    "stat.sample_covariance",
+    "bayes.hmm",
+    "pm.black_litterman",
+    "pm.portfolio_optimization",
+    "risk.drawdown"
+  ],
+  "edges": [
+    {
+      "from": "stat.sample_covariance",
+      "to": "bayes.hmm"
+    },
+    {
+      "from": "bayes.hmm",
+      "to": "pm.black_litterman"
+    },
+    {
+      "from": "pm.black_litterman",
+      "to": "pm.portfolio_optimization"
+    },
+    {
+      "from": "pm.portfolio_optimization",
+      "to": "risk.drawdown"
+    }
+  ]
+}

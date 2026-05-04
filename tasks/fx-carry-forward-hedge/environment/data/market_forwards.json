@@ -1,0 +1,84 @@
+{
+  "_comment": "Deliverable forward quotes, one broken-date case, and explicit FX swap roll cases as of 2023-09-01.",
+  "snapshot_date": "2023-09-01",
+  "deliverable_forwards": {
+    "EURUSD": {
+      "spot_mid": 1.0791,
+      "3M": {
+        "delivery_date": "2023-12-06",
+        "forward_bid": 1.0833,
+        "forward_offer": 1.0837
+      },
+      "6M": {
+        "delivery_date": "2024-03-06",
+        "forward_bid": 1.0870,
+        "forward_offer": 1.0876
+      }
+    },
+    "USDCHF": {
+      "spot_mid": 0.8849,
+      "3M": {
+        "delivery_date": "2023-12-06",
+        "forward_bid": 0.8761,
+        "forward_offer": 0.8767
+      },
+      "6M": {
+        "delivery_date": "2024-03-06",
+        "forward_bid": 0.8683,
+        "forward_offer": 0.8691
+      }
+    },
+    "USDCAD": {
+      "spot_mid": 1.3611,
+      "3M": {
+        "delivery_date": "2023-12-05",
+        "forward_bid": 1.3595,
+        "forward_offer": 1.3601
+      },
+      "6M": {
+        "delivery_date": "2024-03-05",
+        "forward_bid": 1.3583,
+        "forward_offer": 1.3591
+      }
+    }
+  },
+  "broken_date_forwards": {
+    "GBPUSD_6W": {
+      "pair": "GBPUSD",
+      "spot_mid": 1.2586,
+      "delivery_date": "2023-10-18",
+      "forward_bid": 1.2583,
+      "forward_offer": 1.2587
+    }
+  },
+  "roll_cases": [
+    {
+      "case_id": "EURUSD_short_roll",
+      "pair": "EURUSD",
+      "position": "short_base_forward",
+      "near_tenor": "3M",
+      "far_tenor": "6M",
+      "spot_bid": 1.0824,
+      "spot_offer": 1.0826,
+      "near_points_bid": 8,
+      "near_points_offer": 11,
+      "far_points_bid": 29,
+      "far_points_offer": 34,
+      "multiplier": 10000
+    },
+    {
+      "case_id": "USDCHF_long_roll",
+      "pair": "USDCHF",
+      "position": "long_base_forward",
+      "near_tenor": "3M",
+      "far_tenor": "6M",
+      "spot_bid": 0.8748,
+      "spot_offer": 0.8752,
+      "near_points_bid": -77,
+      "near_points_offer": -71,
+      "far_points_bid": -150,
+      "far_points_offer": -142,
+      "multiplier": 10000
+    }
+  ]
+}
