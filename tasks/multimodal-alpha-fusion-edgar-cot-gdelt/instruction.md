@@ -423,6 +423,11 @@ Exactly these keys:
 `num_process_ready_dates` is the count of rebalance dates with at least one
 issuer whose `selected_process != "insufficient_history"`.
 
+The headline backtest metrics in `results.json` are deterministic verifier
+anchors computed from this frozen 16-issuer, 24-month toy panel. They are not
+intended as statistically meaningful performance claims, and they should not be
+interpreted outside this fixed data slice.
+
 ### 7. `solution.json`
 
 Exactly these keys:
