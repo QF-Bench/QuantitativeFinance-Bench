@@ -234,6 +234,7 @@ def build_audit_features(
 def fit_martingale(returns: np.ndarray) -> ModelResult:
     sigma = max(float(returns.std(ddof=0)), SIGMA_FLOOR)
     nll = gaussian_nll(returns, 0.0, sigma)
+    # AIC convention used for all candidate processes: 2*k + 2*NLL.
     return ModelResult(
         name="martingale",
         aic=2.0 * 1 + 2.0 * nll,
@@ -276,6 +277,8 @@ def fit_ou(returns: np.ndarray, period_days: float) -> ModelResult:
     half_life_days = math.log(2.0) / max(theta, 1e-6) * period_days
     expected_return = intercept + phi * float(returns[-1])
     stationary_sigma = sigma / max(math.sqrt(max(1.0 - phi * phi, EPS)), SIGMA_FLOOR)
+    # Include the stationary likelihood for the first observation so OU uses
+    # the same number of returns as martingale, GBM, and Merton in AIC ranking.
     nll = gaussian_nll(y, intercept + phi * x, sigma) + gaussian_nll(returns[:1], mu, stationary_sigma)
     aic = 2.0 * 3 + 2.0 * nll
     return ModelResult(
@@ -324,6 +327,7 @@ def fit_merton(returns: np.ndarray, jump_threshold: float) -> ModelResult:
         )
     )
     lam = min(max(jump_intensity, 1e-6), 1.0 - 1e-6)
+    # Deterministic two-component Gaussian mixture: diffusion plus jump state.
     mixture_pdf = (1.0 - lam) * base_pdf + lam * jump_pdf
     nll = float(-np.log(np.maximum(mixture_pdf, 1e-15)).sum())
     aic = 2.0 * 5 + 2.0 * nll

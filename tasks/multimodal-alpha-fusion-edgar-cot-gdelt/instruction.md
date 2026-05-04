@@ -11,6 +11,28 @@ This hard version requires:
 Do not fetch external data. Do not use lookahead. Write all outputs to
 `/app/output`.
 
+## Scenario
+
+You are building a frozen, reproducible research pipeline for a long/short
+equity sleeve. The investment committee wants to combine multiple issuer
+modalities rather than rely on a single factor family:
+
+- EDGAR-style fundamental and filing freshness signals capture balance-sheet
+  quality and reporting cadence.
+- Issuer activity signals capture insider/officer/director behavior.
+- GDELT-style news features capture attention, tone, source breadth, and risk
+  theme intensity.
+- COT macro buckets provide shared macro context across related issuers.
+- Vendor bulletin and reference-vintage checks penalize stale or inconsistent
+  data before it reaches the alpha committee.
+
+The final portfolio must first fuse the four issuer-side agents, then pass the
+signal through a stochastic-process filter that estimates whether each ticker's
+recent realized returns look more like martingale, GBM, OU mean reversion, or a
+Merton-style jump-diffusion process. This is a toy but deliberately sensitive
+benchmark panel: the output metrics are verifier anchors for this fixed data
+slice, not live trading performance claims.
+
 ## Inputs
 
 Use these files:
@@ -200,6 +222,37 @@ Fit these candidate models:
 For all process models in this task, use population standard deviations
 (`ddof = 0`).
 
+### Likelihood and AIC conventions
+
+Use negative log-likelihoods throughout. For every candidate process, compute:
+
+```text
+AIC = 2 * k + 2 * negative_log_likelihood
+```
+
+where `k` is the model parameter count from `params.json`.
+
+For the OU model, estimate the AR(1) form:
+
+```text
+r_t = intercept + phi * r_{t-1} + epsilon_t
+```
+
+Then map it to mean-reversion parameters as:
+
+```text
+theta = -log(phi)
+mu = intercept / (1 - phi)
+half_life_days = log(2) / theta * holding_period_days
+```
+
+The OU likelihood must be evaluated on the same full trailing-return history as
+the other models. Compute the conditional likelihood for `returns[1:]` given
+`returns[:-1]`, then add the first observation's log likelihood under the OU
+stationary distribution with mean `mu` and standard deviation
+`ou_sigma / sqrt(1 - phi^2)`. This makes OU AIC comparable to martingale, GBM,
+and Merton AIC values.
+
 For `merton_jump_diffusion`, use this exact deterministic estimation procedure:
 
 1. compute full-sample trailing `mu = mean(returns)` and
@@ -271,8 +324,13 @@ For model selection:
 - if only one finite model AIC exists, set `process_conviction = 1.0`
 - otherwise let
   `aic_gap = second_best_aic - best_aic`
-  and apply the sigmoid rule using `process_conviction_scale` from
-  `params.json`
+  and apply:
+
+```text
+process_conviction = 1 / (1 + exp(-aic_gap / process_conviction_scale))
+```
+
+using `process_conviction_scale` from `params.json`
 
 ## 6. Final signal
 
