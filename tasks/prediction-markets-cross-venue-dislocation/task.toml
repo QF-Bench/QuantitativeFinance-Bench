@@ -15,10 +15,10 @@ tags = [
   "arbitrage",
   "backtesting",
 ]
-expert_time_estimate_min = 90.0
-junior_time_estimate_min = 240.0
+expert_time_estimate_min = 120.0
+junior_time_estimate_min = 300.0
 skills_provided = "None"
-data_source = "Public Kalshi historical market/candlestick endpoints and public Polymarket Gamma/CLOB market-data endpoints, frozen into a matched Republican Senate seats 2024 package."
+data_source = "Frozen matched prediction-market panel with public Kalshi/Polymarket-style schemas, expanded into a deterministic multi-family stress package for cross-venue dislocation testing."
 
 [verifier]
 timeout_sec = 300.0
