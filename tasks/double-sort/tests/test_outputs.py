@@ -33,7 +33,7 @@ OUTPUT_PATH = Path("/app/output/strategy_returns.csv")
 
 # ---------------------------------------------------------------- task config
 SIGNAL_COLS = ["betabab_1260d", "ret_12_7"]
-RETURN_COL = "ret_1_0"
+RETURN_COL = "ret_lead1m"
 COST_PER_ONE_WAY = 0.0015  # 15 basis points, one-way executed turnover
 EXPECTED_COLS = ["date", "net_return"]
 
