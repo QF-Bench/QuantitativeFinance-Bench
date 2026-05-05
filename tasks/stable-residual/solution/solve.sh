@@ -331,20 +331,17 @@ def main():
                 w_final = dict(w_reproj)
 
         # --- performance metrics
-        ret_map = {
-            int(ids_arr[i]): (
-                float(ret_arr[i]) if np.isfinite(ret_arr[i]) else float("nan")
-            )
-            for i in range(n)
-        }
-
+        # Use the full-month raw ret_lead1m map so that carry-over names from
+        # w_prev that have dropped out of this month's formation universe
+        # still receive their actual realized return (rather than being
+        # silently zeroed via the formation-only panel).
         all_names = set(w_final) | set(w_prev)
         gross_return = 0.0
         for i, w in w_final.items():
             if w == 0.0:
                 continue
-            r = ret_map.get(i, float("nan"))
-            if np.isfinite(r):
+            r = raw_ret_map.get(i, float("nan"))
+            if r is not None and np.isfinite(r):
                 gross_return += w * r
             # missing ret_lead1m -> treat realized return as 0.0
 
