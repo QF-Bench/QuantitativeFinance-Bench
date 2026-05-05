@@ -290,19 +290,17 @@ def _compute_reference():
             else:
                 w_final = dict(w_reproj)
 
-        ret_map = {
-            int(ids_arr[i]): (
-                float(ret_arr[i]) if np.isfinite(ret_arr[i]) else float("nan")
-            )
-            for i in range(n)
-        }
+        # Use raw month-panel ret_lead1m so carry-over names from w_prev that
+        # left this month's formation universe still receive their realized
+        # return. Matches the spec's "missing ret_lead1m -> 0" semantics
+        # symmetrically with the weights-CSV ret_lead1m field.
         all_names = set(w_final) | set(w_prev)
         gross_return = 0.0
         for i, w in w_final.items():
             if w == 0.0:
                 continue
-            r = ret_map.get(i, float("nan"))
-            if np.isfinite(r):
+            r = raw_ret_map.get(i, float("nan"))
+            if r is not None and np.isfinite(r):
                 gross_return += w * r
         txn = COST_BPS * sum(
             abs(w_final.get(i, 0.0) - w_prev.get(i, 0.0)) for i in all_names

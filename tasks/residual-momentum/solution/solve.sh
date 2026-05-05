@@ -228,7 +228,9 @@ def main():
         results[f"avg_beta_model_c_{sig}"] = float(series.mean())
         results[f"tstat_model_c_{sig}"] = float(nw_tstat(series, NW_LAG))
 
-    # Per-model OOS aggregates.
+    # Per-model OOS aggregates — computed internally for the residual_beats_raw
+    # verdict only; not emitted as JSON keys (the spread CSV holds the per-month
+    # data that any downstream analysis can re-aggregate from).
     ic_means = {}
     spread_means = {}
     for m in ("A", "B", "C"):
@@ -237,21 +239,8 @@ def main():
             [r["q5_minus_q1"] for r in per_model[m]["spread_rows"]],
             dtype=float,
         )
-        mean_ic = float(ic.mean()) if ic.size > 0 else float("nan")
-        std_ic = float(ic.std(ddof=1)) if ic.size > 1 else float("nan")
-        ic_ir = safe_ratio(mean_ic, std_ic)
-
-        sp_mean = float(sp.mean()) if sp.size > 0 else float("nan")
-        sp_std = float(sp.std(ddof=1)) if sp.size > 1 else float("nan")
-        sharpe = safe_ratio(sp_mean * math.sqrt(ANN_FACTOR), sp_std)
-
-        ic_means[m] = mean_ic
-        spread_means[m] = sp_mean
-        results[f"mean_ic_model_{m.lower()}"] = mean_ic
-        results[f"ic_ir_model_{m.lower()}"] = ic_ir
-        results[f"spread_mean_model_{m.lower()}"] = sp_mean
-        results[f"spread_std_model_{m.lower()}"] = sp_std
-        results[f"sharpe_model_{m.lower()}"] = sharpe
+        ic_means[m] = float(ic.mean()) if ic.size > 0 else float("nan")
+        spread_means[m] = float(sp.mean()) if sp.size > 0 else float("nan")
 
     raw_max = max(
         abs(results["tstat_model_c_ret_12_7"]),
