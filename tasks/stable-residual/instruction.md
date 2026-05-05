@@ -12,7 +12,7 @@ Read:
 
 - `/app/data/stock_chars.pqt`
 
-Each row is one `(identifier, date)` observation.
+Each row is one `(identifier, date)` observation. The `identifier` column is integer-typed in the input panel; preserve integer typing throughout (do not coerce to string before sorting / tie-breaking, since lexicographic order on string-cast integers does not agree with numeric order).
 
 Use exactly these columns:
 
@@ -234,6 +234,8 @@ For each tradable rebalance month `t`:
 
 - `transaction_cost_t = 0.0010 * sum_i abs(w_final_i - w_prev_i)`
 
+Note: this cost formula uses the **two-way** (un-halved) sum of weight changes, so the 0.0010 multiplier corresponds to **10 bps per side** (the same 10 bps you would charge in conventional one-way notation: `cost = 2 * 0.0005 * one_way_turnover`). The `turnover` reported in `monthly_results.csv` is the one-way figure defined in the previous section.
+
 4. Compute net return as:
 
 - `net_return_t = gross_return_t - transaction_cost_t`
@@ -264,7 +266,10 @@ Compute:
 - `annualized_sharpe_net` = `annualized_return_net / annualized_volatility_net`
   - if `annualized_volatility_net == 0`, set to `0.0`
 - `cumulative_net_return` = `prod_t (1 + r_t) - 1`
-- `max_drawdown_net` from the cumulative net wealth path starting at `1.0`
+- `max_drawdown_net` reported as a **non-negative number** (industry convention). Compute it from the cumulative net wealth path `W_t = prod_{s<=t} (1 + r_s)` (with `W_0 = 1.0`) as
+  - `max_drawdown_net = max_t ((peak_t - W_t) / peak_t)`
+  - where `peak_t = max_{s<=t} W_s` is the running maximum.
+  - If the wealth path never declines, `max_drawdown_net = 0.0`.
 - `avg_turnover`
 - `max_turnover`
 - `avg_abs_beta_exposure`

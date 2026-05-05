@@ -534,12 +534,20 @@ def test_model_c_avg_beta(agent_json, reference, signal):
 @pytest.mark.parametrize("signal", MOMENTUM_ALL, ids=MOMENTUM_ALL)
 def test_model_c_tstat(agent_json, reference, signal):
     """Newey-West (Bartlett kernel, lag 6) t-stat on each of the four
-    momentum signal slope series in Model C must match the reference."""
+    momentum signal slope series in Model C must match the reference.
+
+    Tolerance is rtol=1e-3 to accommodate small numerical drift between the
+    manual Bartlett-kernel implementation in this verifier and equivalent
+    formulations in `statsmodels` / `sandwich` that vary in their use of
+    T vs T-1 vs T-k denominators in the residual variance and lag
+    autocovariances. All such variants are valid Newey-West estimators of
+    the same population quantity.
+    """
     monthly = reference["per_model"]["C"]["monthly"]
     series = _beta_series_by_name(monthly, MODEL_REGS["C"], signal)
     expected = _nw_tstat(series, NW_LAG)
     actual = agent_json[f"tstat_model_c_{signal}"]
-    assert np.isclose(actual, expected, rtol=1e-4, atol=1e-6), (
+    assert np.isclose(actual, expected, rtol=1e-3, atol=1e-5), (
         f"tstat_model_c_{signal}={actual}, expected {expected}"
     )
 

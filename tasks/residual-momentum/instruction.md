@@ -30,7 +30,7 @@ For valid months, run OLS to extract coefficients and fitted values. Calculate t
 ## 4. OOS Evaluation Metrics
 For each forecastable month and model:
 * **Information Coefficient (IC):** Spearman rank correlation between OOS predictions and realized `ret_lead1m`. Calculate the Information Ratio as $\mu_{\text{IC}} / \sigma_{\text{IC}}$ (`ddof=1`).
-* **Deterministic Sorts:** Rank stocks by OOS prediction ascending. Assign to quintiles using zero-indexed rank $r \in [0, N-1]$:
+* **Deterministic Sorts:** Rank stocks by OOS prediction ascending; **break ties by `identifier` ascending**, so the rank is fully deterministic when two stocks have identical predicted returns. Assign to quintiles using zero-indexed rank $r \in [0, N-1]$:
     $$q = \min\left(5, \left\lfloor \frac{5r}{N} \right\rfloor + 1\right)$$
     Compute equal-weighted returns for $Q1$ and $Q5$. A spread ($Q5 - Q1$) is valid only if both quintiles are non-empty. 
 
