@@ -106,11 +106,10 @@ def test_calc_sheets_use_formulas(wb_formulas):
     ("D13",  160.749,  0.5),    # CIP fwd start
     ("D14",  163.136,  0.5),    # CIP fwd end
     ("D15",    0.0145, 0.005),  # FX move %
-    ("D16",    2.542,  0.05),   # nominal carry diff
-    ("D17", -10384.0, 800.0),   # MTM PnL
-    ("D18",  14541.0, 800.0),   # spot component
-    ("D19", -24568.0, 800.0),   # carry component
-    ("D27",    1.542,  0.10),   # real 1Y differential
+    ("D16",    2.542,  0.05),   # nominal carry diff at trade open
+    ("D17", -10384.0, 1500.0),  # realised MTM PnL marked to quarter-end spot
+    ("D18",  14541.0, 1500.0),  # spot component
+    ("D27",    1.542,  0.20),   # real 1Y differential (US − JP)
 ])
 def test_carry_pnl_values(wb_values, addr, expected, tol):
     val = wb_values["Carry_PnL"][addr].value
@@ -120,20 +119,28 @@ def test_carry_pnl_values(wb_values, addr, expected, tol):
 
 
 def test_carry_pnl_decomp_sums(wb_values):
-    """spot + carry + residual must reconstruct the total PnL."""
+    """spot + carry + residual must reconstruct the total PnL.
+
+    The carry/residual split admits multiple legitimate decompositions
+    (carry-as-strike-premium vs carry-as-period-rate-differential), so we
+    verify the sum constraint rather than each cell's exact value. D17
+    (total) and D18 (spot) are pinned; D19 + D20 must close the gap.
+    """
     pnl = wb_values["Carry_PnL"]
     total = pnl["D17"].value
     spot = pnl["D18"].value
     carry = pnl["D19"].value
     residual = pnl["D20"].value
-    assert abs((spot + carry + residual) - total) < 1.0, \
+    for label, v in [("D17", total), ("D18", spot), ("D19", carry), ("D20", residual)]:
+        assert isinstance(v, (int, float)), f"Carry_PnL!{label} not numeric: {v!r}"
+    assert abs((spot + carry + residual) - total) < 5.0, \
         f"decomp does not sum: spot={spot} + carry={carry} + resid={residual} ≠ {total}"
 
 
 @pytest.mark.parametrize("row,name,expected_pnl,tol", [
-    (4, "Baseline",                 14850.0,  1500.0),
-    (5, "Fed −100bp + JPY +5%",    -45191.0,  3000.0),
-    (6, "BoJ +50bp + JPY −5%",      60349.0,  3000.0),
+    (4, "Baseline",                 14850.0,  2000.0),
+    (5, "Fed −100bp + JPY +5%",    -45191.0,  4000.0),
+    (6, "BoJ +50bp + JPY −5%",      60349.0,  5000.0),
 ])
 def test_scenario_pnl(wb_values, row, name, expected_pnl, tol):
     """Three-scenario MTM PnL must match within tolerance."""

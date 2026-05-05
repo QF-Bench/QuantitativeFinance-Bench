@@ -25,7 +25,7 @@ Pull the trade's inputs into column D, rows 4–10 — quarter-start spot (the a
 - the realised mark-to-market PnL of the long-USD/JPY 1Y forward, marking the position to the quarter-end spot against the original strike (row 17);
 - a decomposition of that PnL into a **spot** contribution (row 18, what you'd have made holding cash spot), a **carry** contribution (row 19, the interest-rate differential earned through the forward), and a **residual** (row 20) such that the three components sum to the total PnL.
 
-Real-rate overlay in rows 23–27: pull the IMF 2026 CPI projections for USA and JPN, compute real US 1Y and real JP 1Y at quarter start, and report the real-rate differential at quarter start.
+Real-rate overlay in rows 23–27: pull the IMF 2026 CPI projections for USA and JPN, compute real US 1Y and real JP 1Y at quarter start (each as the nominal yield minus that country's 2026 CPI), and report the **(US − JP)** real-rate differential at quarter start.
 
 ## Step 4 — `Scenarios` (forward sensitivity, rows 4–6)
 
