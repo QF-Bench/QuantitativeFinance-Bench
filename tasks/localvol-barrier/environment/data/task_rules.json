@@ -27,7 +27,7 @@
   "parity_convention_usd": "after premium conversion to USD, use C - P = F - K",
   "otm_side_rule": "use put-based synthetic calls for K < F and direct call mids for K >= F",
   "surface_interpolator": "PchipInterpolator in strike for each expiry",
-  "local_vol_method": "Dupire finite differences on the target expiry-strike grid",
+  "local_vol_method": "Dupire finite differences on the target expiry-strike grid using numpy.gradient with edge_order=2 for every derivative; compute d2C/dK2 by applying numpy.gradient twice in the strike direction. Do not hand-roll a custom finite-difference stencil.",
   "local_var_floor": 1e-08,
   "local_vol_cap": 3.0,
   "mc_variance_reduction": "antithetic variates",

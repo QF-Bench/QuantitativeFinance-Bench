@@ -98,6 +98,9 @@ Note: the exact-discretization form `κ = −ln(1 + β) / Δt` (AR(1)-on-levels)
 is equally valid and widely used, but produces a different numeric answer;
 this task fixes the plug-in form for reproducibility.
 
+Use the **unbiased** OLS residual standard deviation (ddof=1) when
+computing σ.
+
 Compute the half-life and stationary distribution standard deviation.
 
 If the estimated mean-reversion speed is non-positive, set half-life
@@ -115,14 +118,30 @@ Initialize from `f_0 = last observed funding rate` in the dataset.
 Use `numpy.random.default_rng(mc_random_seed)`.
 
 For each simulated path, compute the cumulative funding income for a
-basis carry position over the horizon. Determine the annual return.
+basis carry position over the horizon. The carry position receives the
+funding rate at the **start** of each period: accumulate exactly
+`mc_horizon_periods` rates, beginning with the rate generated for the
+first step (not the observed initial rate `f_0`). Determine the annual
+return by scaling the cumulative income by `annualization_periods /
+mc_horizon_periods`.
 
 Across all paths compute:
 - Mean and std of annualized carry return.
 - VaR at `var_confidence` level (loss convention: positive = loss).
-- CVaR (expected shortfall): mean of losses exceeding the VaR threshold.
+  VaR is the loss at the specified confidence level: negate each
+  annual return to obtain a loss, sort those losses ascending, and
+  take the value at index `ceil(var_confidence × mc_num_paths) − 1`;
+  clamp to zero (no negative losses).
+- CVaR (expected shortfall): mean of losses (negated returns) that are
+  strictly worse than the VaR threshold; report as a positive number.
 - Percentage of paths with negative annual return.
 - Percentiles: 5th, 25th, 50th, 75th, 95th of annualized return.
+- For `simulated_funding_rate_distribution`: report the distribution
+  of the **per-path average** funding rate — the rate a carry position
+  actually receives on average over the horizon. For each path,
+  compute the mean of all simulated rates after the initial step; then
+  report the cross-path mean, std, and percentiles of those per-path
+  averages.
 
 ## Output Files
 

@@ -97,6 +97,8 @@ Save all results to the directory specified by the `OUTPUT_DIR` environment vari
 }
 ```
 
+**`S0` is the last price** in the dataset (most recent closing price, i.e. `close[-1]`).
+
 ### 2. `full_sample_vol.json`
 
 ```json
@@ -115,6 +117,18 @@ Save all results to the directory specified by the `OUTPUT_DIR` environment vari
 ```
 estimator,mean_vol,std_vol,min_vol,max_vol,efficiency
 ```
+
+The `estimator` column must use these exact snake_case names (one per row):
+
+| `estimator` value (CSV row) | Corresponding JSON key in `full_sample_vol.json` |
+|------------------------------|---------------------------------------------------|
+| `close_to_close`             | `cc_vol`                                          |
+| `parkinson`                  | `parkinson_vol`                                   |
+| `garman_klass`               | `garman_klass_vol`                                |
+| `rogers_satchell`            | `rogers_satchell_vol`                             |
+| `yang_zhang`                 | `yang_zhang_vol`                                  |
+
+Note that the CSV row vocabulary uses the **full snake_case names** (`close_to_close`, not `cc`), even though the JSON output keys use abbreviations (`cc_vol`, etc.). The two vocabularies are distinct by design — JSON keys mirror standard practitioner shorthand, while the CSV row labels are the spelled-out estimator names.
 
 ### 4. `vol_term_structure.csv`
 

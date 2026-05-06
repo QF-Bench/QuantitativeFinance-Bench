@@ -7,5 +7,8 @@
   },
   "cvar_confidence": 0.99,
   "cvar_window": 63,
-  "estimation_window_days": 504
+  "estimation_window_days": 504,
+  "top_k_eigenvalues": 3,
+  "regime_crisis_threshold": 0.65,
+  "regime_risk_off_threshold": 0.45
 }

@@ -7,5 +7,6 @@
   "initial_capital": 1000000,
   "engagement_weight": true,
   "vol_target_annual": 0.10,
-  "vol_lookback_days": 20
+  "vol_lookback_days": 20,
+  "max_leverage_scale": 3.0
 }

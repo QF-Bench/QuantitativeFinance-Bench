@@ -68,11 +68,26 @@ by pair (10000 for most, 100 for JPY crosses).
 Construct spot and 3M forward cross rates for all pairs listed in
 `params.json` by triangulating through the underlying USD pairs.
 
-For bid/ask, think about which side of each USD leg a dealer would
-actually trade to replicate the cross-forward exposure; apply those
-matching sides consistently so that the resulting cross forward bid/ask
-reflects the interbank hedge rather than a single scaling of the
-cross-spot spread.
+For bid/ask, apply the following triangulation rule. When both USD legs
+are quoted as `XXX/USD` (USD is the quote currency — e.g. GBP/USD,
+EUR/USD, AUD/USD), and the cross is `XXX/YYY`:
+
+- **Cross bid** = `XXX/USD bid` × `USD/YYY bid`
+  (sell XXX → buy USD at bid; sell USD → buy YYY at USD/YYY bid, i.e. `1 / (YYY/USD ask)`)
+- **Cross ask** = `XXX/USD ask` × `USD/YYY ask`
+  (buy XXX → sell USD at ask; buy USD → sell YYY at USD/YYY ask, i.e. `1 / (YYY/USD bid)`)
+
+When one leg is quoted as `USD/ZZZ` (USD is the base — e.g. USD/JPY,
+USD/CHF), first convert to `ZZZ/USD = 1 / (USD/ZZZ)` and apply the
+formula above, flipping bid/ask in the reciprocal. For example, for
+GBP/JPY using GBP/USD and USD/JPY:
+
+- `GBP/JPY mid  = GBP/USD mid  × USD/JPY mid`
+- `GBP/JPY bid  = GBP/USD bid  × USD/JPY bid`
+- `GBP/JPY ask  = GBP/USD ask  × USD/JPY ask`
+
+Apply the same formula for forward cross rates, substituting the
+relevant tenor's forward bid/ask in place of spot bid/ask.
 
 ### Part 3: Portfolio Valuation
 
