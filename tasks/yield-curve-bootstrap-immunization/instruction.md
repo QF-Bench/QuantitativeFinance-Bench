@@ -87,12 +87,27 @@ and the bootstrapped spot rates at T = 1, 2, …, 10.
 
 Constraints: `β₀ > 0`, `λ₁ > 0`, `λ₂ > 0`.
 
-Starting values: `x0 = [r(10), r(1) − r(10), 0.5, −0.5, 1.0, 5.0]` where `r(T)` is
-the bootstrapped spot rate at maturity T. These are pinned because the Svensson
-objective is non-convex and L-BFGS-B converges to different local optima from
-different starts; anchoring the start guarantees a deterministic pinned-oracle
-comparison across platforms (Diebold & Rudebusch 2013 recommend β₀ = long-rate,
-β₁ = short-minus-long spread as a natural initialisation).
+**Starting values (multi-start permitted).** Use the primary starting point
+
+```
+x0 = [r(10), r(1) − r(10), 0.5, −0.5, 1.0, 5.0]
+```
+
+where `r(T)` is the bootstrapped spot rate at maturity T (Diebold & Rudebusch
+2013 recommend β₀ = long-rate, β₁ = short-minus-long spread as a natural
+initialisation). The Svensson objective is non-convex, so L-BFGS-B can converge
+to different local optima from different starts. Implementations may **either**:
+
+- run a single L-BFGS-B optimisation from the primary `x0` above, **or**
+- run a multi-start (the primary `x0` plus one or more additional starts) and
+  report the parameters of the start that achieves the lowest sum-of-squared
+  residuals.
+
+Both are accepted. The primary `x0` is the natural initialisation; multi-start
+is recommended robustness on platforms where L-BFGS-B's iteration trajectory is
+sensitive to BLAS/floating-point ordering. The reference solution attempts
+three starts (the primary `x0` above plus `[0.03, −0.01, 0.1, −0.1, 2.0, 3.0]`
+and `[mean(r), 0, 0, 0, 0.5, 2.0]`) and reports the lowest-SSE result.
 
 Set optimisation tolerances `ftol = 1e-14`, `gtol = 1e-10`, `maxiter = 5000`.
 
