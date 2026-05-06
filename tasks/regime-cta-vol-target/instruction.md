@@ -88,6 +88,8 @@ Fit per-asset GARCH(1,1) to obtain daily decimal conditional volatilities `σ_i[
 
 Use **RMS of variances**, NOT the arithmetic mean of vols. The two differ by Jensen's inequality and produce different regime thresholds.
 
+Use `conditional_volatility[t]` directly for period-t regime/position sizing.
+
 ### Regime Classification
 
 Classify each day t using the time-series percentiles of σ_composite[t]:
