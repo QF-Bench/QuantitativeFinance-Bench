@@ -106,4 +106,4 @@ Output should be in the following format:
   follow this, you will deviate from the expected results.
 - If the target is missing for a training block, just skip it.
 - random state should be fixed to 0
-- the consecutive changes in PCA component should be minimalized
+- Fix the sign of PC1 so that its correlation with the level-0 weighted OFI feature (`weighted_ofi_0`) is non-negative: if `corr(PC1_train, weighted_ofi_0_train) < 0`, multiply PC1 by −1 before fitting the OLS model and before transforming any new observation.
