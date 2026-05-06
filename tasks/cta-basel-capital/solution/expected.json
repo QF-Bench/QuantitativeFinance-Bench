@@ -13,7 +13,7 @@
   "deliverables": [
     {
       "name": "capital_charge",
-      "value": 0.2429975470425697,
+      "value": 0.3541772703859474,
       "path": "results.json:capital_charge",
       "tolerance": {
         "rtol": 0.05,
@@ -22,7 +22,7 @@
     },
     {
       "name": "stressed_var",
-      "value": 0.049708957446930595,
+      "value": 0.07493692220894345,
       "path": "results.json:stressed_var",
       "tolerance": {
         "rtol": 0.05,
@@ -31,7 +31,7 @@
     },
     {
       "name": "var_component",
-      "value": 0.07398709172300569,
+      "value": 0.09939173487553962,
       "path": "results.json:var_component",
       "tolerance": {
         "rtol": 0.05,
@@ -40,7 +40,7 @@
     },
     {
       "name": "svar_component",
-      "value": 0.16901045531956402,
+      "value": 0.2547855355104077,
       "path": "results.json:svar_component",
       "tolerance": {
         "rtol": 0.05,

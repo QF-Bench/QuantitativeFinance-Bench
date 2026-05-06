@@ -1,7 +1,7 @@
 {
   "checkpoints": {
     "annualized_return": {
-      "value": 0.04120655630404832,
+      "value": 0.0551938590394011,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
@@ -11,7 +11,7 @@
       "siblings": {}
     },
     "annualized_volatility": {
-      "value": 0.0784208550075487,
+      "value": 0.0756910728970748,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
@@ -21,7 +21,7 @@
       "siblings": {}
     },
     "sharpe_ratio": {
-      "value": 0.3979369556866527,
+      "value": 0.5970830813939709,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
@@ -31,17 +31,17 @@
       "siblings": {}
     },
     "max_drawdown": {
-      "value": 0.12154166336517966,
+      "value": 0.10853632317499345,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
         "rtol": 0.1,
-        "atol": 0.13369582970169763
+        "atol": 0.11938995549249279
       },
       "siblings": {}
     },
     "calmar_ratio": {
-      "value": 0.3390323545288384,
+      "value": 0.5085289184747107,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
@@ -51,7 +51,7 @@
       "siblings": {}
     },
     "avg_abs_leverage": {
-      "value": 0.8480332703376716,
+      "value": 0.8933071172644262,
       "concept": "",
       "domain": "PM",
       "tolerance": {
@@ -61,7 +61,7 @@
       "siblings": {}
     },
     "garch_omega": {
-      "value": 3.1205105373244444e-08,
+      "value": 2.3187993405650445e-06,
       "concept": "vol.garch",
       "domain": "PM",
       "tolerance": {
@@ -70,7 +70,7 @@
       "siblings": {}
     },
     "garch_alpha": {
-      "value": 0.1009819631245923,
+      "value": 0.09991716882646107,
       "concept": "vol.garch",
       "domain": "PM",
       "tolerance": {
@@ -79,7 +79,7 @@
       "siblings": {}
     },
     "garch_beta": {
-      "value": 0.8980485440194719,
+      "value": 0.7996186339511748,
       "concept": "vol.garch",
       "domain": "PM",
       "tolerance": {
@@ -88,7 +88,7 @@
       "siblings": {}
     },
     "garch_persistence": {
-      "value": 0.9990305071440642,
+      "value": 0.8995358027776359,
       "concept": "vol.garch",
       "domain": "PM",
       "tolerance": {
@@ -97,7 +97,7 @@
       "siblings": {}
     },
     "long_run_variance": {
-      "value": 3.2187040040767064e-05,
+      "value": 2.308085272838732e-05,
       "concept": "vol.garch",
       "domain": "PM",
       "tolerance": {
@@ -106,7 +106,7 @@
       "siblings": {}
     },
     "var_99": {
-      "value": 0.02176090933029579,
+      "value": 0.029232863198688126,
       "concept": "risk.var",
       "domain": "PM",
       "tolerance": {
