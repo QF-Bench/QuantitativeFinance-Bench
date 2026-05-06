@@ -21,7 +21,9 @@ intermediate checkpoint.
 In the VaR decomposition, `delta_var_pct`, `gamma_var_pct`, and
 `vega_var_pct` represent each Greek factor's percentage share of total
 portfolio variance (not its share of portfolio VaR), so the three
-percentages sum to 100%.
+percentages sum to 100%. Report the values on a 0–100 scale (so a
+value of 50.0 means that Greek's component variance is half of the
+total VaR variance) — not as fractions in the 0–1 range.
 
 ## Input Files
 
