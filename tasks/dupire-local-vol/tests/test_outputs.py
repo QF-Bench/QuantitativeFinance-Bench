@@ -265,12 +265,16 @@ class TestForwardVariance:
         assert (fwd_var_df['total_variance'] > 0).all()
 
     def test_forward_variance_positive(self, fwd_var_df):
-        # Forward variance should be positive at least half the time
-        # Numerical noise and curve fitting can cause some negative values
-        if len(fwd_var_df) > 1:
-            # At least 40% should be positive
-            positive_count = (fwd_var_df.iloc[1:]['forward_variance'] > 0).sum()
-            assert positive_count >= 0.4 * (len(fwd_var_df) - 1)
+        # Forward variance is computed as the difference in total variance between
+        # consecutive expiries.  The last row has no next expiry and is therefore
+        # undefined (stored as 0); exclude it.  Interior forward variances must be
+        # positive (calendar arbitrage free) for a well-calibrated SVI surface.
+        if len(fwd_var_df) > 2:
+            interior = fwd_var_df.iloc[:-1]  # drop the last (undefined) row
+            positive_count = (interior['forward_variance'] > 0).sum()
+            assert positive_count >= 0.9 * len(interior), (
+                f"Only {positive_count}/{len(interior)} interior forward variances are positive"
+            )
 
     def test_forward_variance_local_vol_atm_positive(self, fwd_var_df):
         assert (fwd_var_df['local_vol_atm'] > 0).all()
@@ -313,5 +317,3 @@ class TestSummary:
 
     def test_summary_forward_var_positive(self, summary):
         assert isinstance(summary['forward_var_positive'], bool)
-        # Note: Due to numerical noise, we relax this constraint
-        # The important thing is that local vols are positive and the model is calibrated
