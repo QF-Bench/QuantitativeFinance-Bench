@@ -75,7 +75,15 @@ Report intermediate checkpoints (used for partial scoring):
 - Python 3.11+ with numpy, pandas, scipy available.
 - Eigenvalues: use symmetric eigenvalue decomposition.
 - Absorption ratio: fraction of variance explained by the top
-  eigenvalues above the Marchenko-Pastur noise threshold.
+  eigenvalues above the Marchenko-Pastur noise threshold. For a
+  correlation matrix, the total variance equals the number of assets,
+  so the ratio is `sum(eigenvalues above threshold) / n_assets`.
+- Regime classification uses the mean and standard deviation of the
+  full rolling absorption-ratio series (after all estimation-window
+  windows are computed). A window is **crisis** when its absorption
+  ratio exceeds the mean by more than one standard deviation,
+  **risk-on** when it falls more than one standard deviation below the
+  mean, and **risk-off** otherwise.
 - Inverse-volatility weights normalised to sum to 1, then scaled by
   risk_budget[regime]. Compute each asset's volatility as the sample
   standard deviation of its rolling returns (ddof=1).
