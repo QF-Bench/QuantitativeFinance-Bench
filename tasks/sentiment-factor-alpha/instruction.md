@@ -125,11 +125,15 @@ Report intermediate checkpoints (used for partial scoring):
   weights apply (scaler = 1).
 - Transaction cost: sum of absolute weight changes × cost_bps / 10000,
   deducted from daily return.
-- **Strategy daily return uses same-day realization:
-  `portfolio_return[t] = Σᵢ weight_i[t] × asset_return_i[t]`.** The
-  next-day-return alignment specified for IC computation (`mean_ic`) is
-  a separate convention that applies only to IC and does NOT extend to
-  the strategy P&L; do not shift returns by one day for the backtest.
+- Apply a one-day execution lag for the strategy P&L: the long-short
+  weights decided at the close of trading day `t` (using the signal
+  observed up through day `t`) earn the close-to-close asset return
+  realized over the next trading day `t+1`. The weight set on day `t`
+  multiplies the period-(t+1) return; do not multiply by the same-day
+  return, which would introduce look-ahead because the day-`t` signal
+  uses information that overlaps with the day-`t` price move. (The IC
+  computation reflects the same alignment: `signal[t]` vs the next-day
+  return.)
 - Sharpe ratio: annualised with √252, using std with ddof=1.
 - Maximum drawdown: report as positive magnitude.
 - Annualise alpha by × 252 (simple multiplication).
