@@ -246,4 +246,4 @@ Every task directory must include:
 
 ## License
 
-Apache-2.0 -- see [LICENSE](LICENSE).
+CC BY-NC 4.0 — Creative Commons Attribution-NonCommercial 4.0 International. See [LICENSE](LICENSE).
