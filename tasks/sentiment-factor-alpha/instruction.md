@@ -83,6 +83,11 @@ Report intermediate checkpoints (used for partial scoring):
   and counted in `num_valid_posts`.
 - Engagement multiplier (when enabled):
   1 + ln(1 + likes + 2 × retweets + 3 × replies).
+  **A *final score* is the per-post engagement-weighted sentiment score:
+  `final_score_post = sentiment_score × engagement_multiplier`.
+  `mean_weighted_score` is the arithmetic mean of `final_score_post` over
+  the subset of valid posts whose final score is nonzero (this subset
+  count is reported as the `num_scored_nonzero` intermediate).**
 - Momentum signal: current-day aggregate minus mean of previous
   `momentum_lookback_days` aggregates. Days with no posts count as 0.
   Skip tickers with fewer than `volume_filter_min_posts` posts on the
@@ -99,6 +104,11 @@ Report intermediate checkpoints (used for partial scoring):
   enough return history is available.
 - Transaction cost: sum of absolute weight changes × cost_bps / 10000,
   deducted from daily return.
+- **Strategy daily return uses same-day realization:
+  `portfolio_return[t] = Σᵢ weight_i[t] × asset_return_i[t]`.** The
+  next-day-return alignment specified for IC computation (`mean_ic`) is
+  a separate convention that applies only to IC and does NOT extend to
+  the strategy P&L; do not shift returns by one day for the backtest.
 - Sharpe ratio: annualised with √252, using std with ddof=1.
 - Maximum drawdown: report as positive magnitude.
 - Annualise alpha by × 252 (simple multiplication).
