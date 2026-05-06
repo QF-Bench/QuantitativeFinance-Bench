@@ -5,5 +5,7 @@
   "r": 0.0121,
   "T": 0.5,
   "confidence_level": 0.99,
-  "n_contracts": 50
+  "n_contracts": 50,
+  "fd_dS_pct": 0.01,
+  "fd_dsigma": 0.01
 }
