@@ -530,12 +530,27 @@ def regenerate_cta():
         )
         var_99 = z_val * math.sqrt(cum_var_normal)
 
-        H_FACTOR = 1.5
-        stressed_base_var = max(last_h, H_FACTOR * long_run_var)
-        _, cum_var_stressed = garch_multistep_forecast(
-            omega, alpha_g, beta_g, last_ret, stressed_base_var, holding_period
-        )
-        svar_99 = z_val * math.sqrt(cum_var_stressed)
+        # Stressed VaR (Basel-style historical lookback): rolling 250-day
+        # window over the portfolio return history. For each window, fit a
+        # fresh GARCH(1,1) and compute the multi-step conditional VaR at the
+        # window's end. Stressed VaR = max conditional VaR across windows.
+        STRESS_WINDOW = 250
+        rolling_vars = []
+        n_pr = len(portfolio_returns)
+        if n_pr >= STRESS_WINDOW:
+            for end_idx in range(STRESS_WINDOW, n_pr + 1):
+                window_rets = portfolio_returns[end_idx - STRESS_WINDOW:end_idx]
+                fit_w = fit_garch_arch(window_rets)
+                last_h_w = float(fit_w['cond_var'][-1])
+                last_ret_w = float(window_rets[-1])
+                _, cum_var_w = garch_multistep_forecast(
+                    fit_w['omega'], fit_w['alpha'], fit_w['beta'],
+                    last_ret_w, last_h_w, holding_period,
+                )
+                rolling_vars.append(z_val * math.sqrt(cum_var_w))
+            svar_99 = float(max(rolling_vars))
+        else:
+            svar_99 = var_99
 
         var_component = multiplier * abs(var_99)
         svar_component = multiplier * abs(svar_99)
