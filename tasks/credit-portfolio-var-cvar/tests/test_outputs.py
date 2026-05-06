@@ -691,10 +691,27 @@ class TestGranularityAdjustment:
                     f"Vasicek VaR ({row['vasicek_var']:.2f}) at " \
                     f"{row['confidence_level']}"
 
+    def test_ga_meaningful_magnitude(self, df):
+        """Granularity adjustment must be a dollar-denominated quantity.
+
+        A correct implementation of the Gordy conditional-variance formula
+        yields GA in the range [$1 000, 5% × Vasicek VaR].  Returning a
+        dimensionless rate (e.g. 0.056) and adding it directly to a USD
+        VaR produces GA ≈ $0.06 — caught here.
+        """
+        for _, row in df.iterrows():
+            if row["confidence_level"] >= 0.99:
+                assert row["granularity_adjustment"] >= 1_000, (
+                    f"GA = {row['granularity_adjustment']:.2f} at "
+                    f"{row['confidence_level']} — appears dimensionless; "
+                    "expected a USD amount ≥ $1 000"
+                )
+
     def test_gordy_close_to_vasicek(self, df):
-        """For a well-diversified portfolio (990 obligors), the
+        """For a well-diversified portfolio (~{N_OBLIGORS} obligors), the
         granularity adjustment should be small relative to Vasicek VaR
-        (< 5% of Vasicek VaR)."""
+        (< 5% of Vasicek VaR).  Proportional to 1/N, so it vanishes as
+        the portfolio becomes more granular."""
         for _, row in df.iterrows():
             if row["vasicek_var"] > 0:
                 pct = abs(row["granularity_adjustment"]) / row["vasicek_var"] * 100

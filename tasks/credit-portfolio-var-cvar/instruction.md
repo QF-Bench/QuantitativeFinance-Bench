@@ -152,38 +152,36 @@ The Vasicek formula assumes an infinitely granular (perfectly diversified)
 portfolio. Real portfolios have name concentration, which the **Gordy
 granularity adjustment** corrects for.
 
-The granularity adjustment is:
+The granularity adjustment is derived from the **conditional variance** of the
+portfolio loss rate given the systematic factor at its worst-case realization.
+For each obligor $i$, the Vasicek conditional default probability is
+$\Phi(h_i(\alpha))$, so the conditional Bernoulli loss variance is
+$\Phi(h_i) \cdot [1 - \Phi(h_i)]$.
 
-$$\text{GA}(\alpha) = \frac{1}{2} \cdot \text{HHI}_{EL} \cdot \frac{C''(\alpha)}{C'(\alpha)}$$
-
-where $\text{HHI}_{EL}$ is the Herfindahl-Hirschman Index of
-exposure-LGD-weighted portfolio shares:
-
-$$\text{HHI}_{EL} = \frac{\sum_i (w_i \cdot \text{LGD}_i)^2}{\left(\sum_i w_i \cdot \text{LGD}_i\right)^2}$$
-
-with $w_i = \text{EAD}_i / \sum_j \text{EAD}_j$ being the exposure weight.
-
-**Conditional loss function derivatives.** Define the conditional default
-threshold for obligor $i$ at confidence level $\alpha$:
+**Conditional default threshold.** Define:
 
 $$h_i(\alpha) = \frac{\Phi^{-1}(\text{PD}_i) + \sqrt{\rho_i} \cdot \Phi^{-1}(\alpha)}{\sqrt{1 - \rho_i}}$$
 
 where $\Phi^{-1}$ is the standard normal quantile function and $\rho_i$ is
-the Basel asset correlation. The first derivative of $C(\alpha)$ is:
+the Basel asset correlation.
 
-$$C'(\alpha) = \sum_i w_i \cdot \text{LGD}_i \cdot \phi(h_i) \cdot \frac{\partial h_i}{\partial \alpha}$$
+**Conditional variance of portfolio loss rate** (with $w_i = \text{EAD}_i / M$,
+$M = \sum_j \text{EAD}_j$):
 
-where $\phi$ is the standard normal PDF, and:
+$$\sigma^2(\alpha) = \sum_i w_i^2 \cdot \text{LGD}_i^2 \cdot \Phi(h_i(\alpha)) \cdot \left[1 - \Phi(h_i(\alpha))\right]$$
 
-$$\frac{\partial h_i}{\partial \alpha} = \frac{\sqrt{\rho_i}}{\sqrt{1 - \rho_i} \cdot \phi(\Phi^{-1}(\alpha))}$$
+**Sensitivity of the conditional loss rate** to the confidence level:
 
-The second derivative is:
+$$C'(\alpha) = \sum_i w_i \cdot \text{LGD}_i \cdot \phi(h_i) \cdot \frac{\partial h_i}{\partial \alpha}, \qquad \frac{\partial h_i}{\partial \alpha} = \frac{\sqrt{\rho_i}}{\sqrt{1 - \rho_i} \cdot \phi(\Phi^{-1}(\alpha))}$$
 
-$$C''(\alpha) = \sum_i w_i \cdot \text{LGD}_i \left[ -h_i \cdot \phi(h_i) \cdot \left(\frac{\partial h_i}{\partial \alpha}\right)^2 + \phi(h_i) \cdot \frac{\partial^2 h_i}{\partial \alpha^2} \right]$$
+where $\phi$ is the standard normal PDF.
 
-where:
+**Granularity adjustment in USD** (Gordy & Lütkebohmert 2013):
 
-$$\frac{\partial^2 h_i}{\partial \alpha^2} = \frac{\sqrt{\rho_i} \cdot \Phi^{-1}(\alpha)}{\sqrt{1 - \rho_i} \cdot \left[\phi(\Phi^{-1}(\alpha))\right]^2}$$
+$$\text{GA}(\alpha) = \frac{M \cdot \sigma^2(\alpha)}{2 \cdot C'(\alpha)}$$
+
+For $N$ equally-weighted obligors $\sigma^2 \sim 1/N$, so
+$\text{GA} \to 0$ as $N \to \infty$, recovering the Vasicek limit.
 
 **Note:** Only include obligors with $\text{PD}_i > 0$ in these sums, as
 $\Phi^{-1}(0) = -\infty$.
