@@ -114,14 +114,16 @@ For the **dynamic** strategy, scale the per-asset target by regime:
 - target_dynamic_i[t] = target_per_asset · scale[t]
   where scale[t] = scale_low_vol if regime=low, scale_high_vol if regime=high, else 1.0
 
-The regime classifier carries the same one-day execution lag as the
-position itself: the position held during day t was sized using the
-regime classification observed at day t-1, the same close at which the
-weight was decided. Equivalently, the dynamic weight that multiplies
-asset_log_return[t] is `weight_dynamic_i[t-1]`, derived from
-`target_dynamic_i[t-1] = target_per_asset · scale[t-1]`. Using
-scale[t] (today's regime) on the position that earns return[t] would
-introduce look-ahead bias into the regime-conditioning factor.
+The regime classifier is treated like any other end-of-day signal: the
+regime label at time `t` is computed from information available up to
+and including the close of day `t`, so `regime[t]` and `scale[t]` are
+contemporaneous with `weight_i[t]` and `signal_i[t]`. The single
+one-day execution lag applied at the portfolio-return step (see
+"Portfolio Returns and Performance Metrics" below) is the only lag
+needed: it shifts every `[t]`-indexed quantity — signal, ewma_vol,
+regime, scale, weight — together onto the next day's return, which
+already prevents look-ahead bias. Do not introduce an additional lag
+on the regime classifier.
 
 ### Portfolio Returns and Performance Metrics
 
