@@ -184,22 +184,29 @@ def garch_multistep_forecast(omega, alpha, beta, last_ret, last_h, holding_perio
 
 def _bgv_pipeline(S0, K, B, r, T, confidence_level, n_contracts,
                    garch_vol, omega, alpha, beta, persistence, long_run_variance,
+                   vol_of_vol, fd_dS_pct=0.01, fd_dsigma=0.01,
                    decomp_method='squared'):
     """Run BGV pipeline from garch_vol onward. Returns deliverables + checkpoints dicts.
 
-    decomp_method: 'squared' (variance-based) or 'linear' (simple attribution)
+    vol_of_vol: annualized realized vol-of-vol from the GARCH conditional-volatility
+        time series — std of daily changes in σ_t × √252.
+    fd_dS_pct: relative bump size for delta/gamma central finite differences,
+        as a fraction of S0 (default 1% — typical risk-system convention).
+    fd_dsigma: absolute bump size for vega central finite differences, in
+        annualized vol units (default 0.01 — 1 vol point — typical convention).
+    decomp_method: 'squared' (variance-based) or 'linear' (simple attribution).
     """
     sigma = garch_vol
     H = B
     analytical_price = barrier_option_price(S0, K, T, r, sigma, H)
 
-    dS = 0.01 * S0
+    dS = fd_dS_pct * S0
     price_up = barrier_option_price(S0 + dS, K, T, r, sigma, H)
     price_dn = barrier_option_price(S0 - dS, K, T, r, sigma, H)
     delta = (price_up - price_dn) / (2 * dS)
     gamma = (price_up - 2 * analytical_price + price_dn) / (dS ** 2)
 
-    dsigma = 0.01
+    dsigma = fd_dsigma
     price_sig_up = barrier_option_price(S0, K, T, r, sigma + dsigma, H)
     price_sig_dn = barrier_option_price(S0, K, T, r, max(sigma - dsigma, 1e-6), H)
     vega = (price_sig_up - price_sig_dn) / (2 * dsigma)
@@ -207,11 +214,11 @@ def _bgv_pipeline(S0, K, B, r, T, confidence_level, n_contracts,
     z = abs(norm.ppf(1.0 - confidence_level))
     daily_vol = garch_vol / math.sqrt(252)
     delta_S_vol = S0 * daily_vol
-    vol_of_vol = 0.10 * garch_vol
+    daily_vol_of_vol = vol_of_vol / math.sqrt(252)
 
     delta_var = abs(n_contracts * delta * z * delta_S_vol)
     gamma_var = 0.5 * abs(n_contracts * gamma * (z * delta_S_vol) ** 2)
-    vega_var = abs(n_contracts * vega * z * vol_of_vol)
+    vega_var = abs(n_contracts * vega * z * daily_vol_of_vol)
 
     if decomp_method == 'squared':
         portfolio_var = math.sqrt(delta_var ** 2 + gamma_var ** 2 + vega_var ** 2)
@@ -271,6 +278,8 @@ def regenerate_bgv():
     T = params['T']
     confidence_level = params['confidence_level']
     n_contracts = params['n_contracts']
+    fd_dS_pct = params.get('fd_dS_pct', 0.01)
+    fd_dsigma = params.get('fd_dsigma', 0.01)
 
     # Phase 1: GARCH
     fit = fit_garch_arch(returns)
@@ -285,15 +294,26 @@ def regenerate_bgv():
     vol_conditional = math.sqrt(cond_var_last * 252)
     vol_unconditional = math.sqrt(long_run_variance * 252)
 
+    # Realized vol-of-vol from the GARCH conditional-volatility time series.
+    # Replaces the prior heuristic σ_σ = 0.10 × garch_vol with an empirically
+    # derived value: the annualized standard deviation of daily changes in
+    # the conditional volatility series.
+    cond_vol_series = np.sqrt(fit['cond_var'] * 252)
+    daily_cond_vol_changes = np.diff(cond_vol_series)
+    vol_of_vol = float(np.std(daily_cond_vol_changes, ddof=1) * math.sqrt(252))
+
     print(f"\n=== barrier-garch-var ===")
     print(f"  omega={omega:.10e}, alpha={alpha:.6f}, beta={beta:.6f}")
     print(f"  persistence={persistence:.6f}, LRV={long_run_variance:.10e}")
     print(f"  vol_conditional={vol_conditional:.6f}, vol_unconditional={vol_unconditional:.6f}")
+    print(f"  realized_vol_of_vol={vol_of_vol:.6f}")
 
     # Build 4 paths: (conditional × squared) + (conditional × linear) + (unconditional × squared) + (unconditional × linear)
     common_args = dict(S0=S0, K=K, B=B, r=r, T=T, confidence_level=confidence_level,
                        n_contracts=n_contracts, omega=omega, alpha=alpha, beta=beta,
-                       persistence=persistence, long_run_variance=long_run_variance)
+                       persistence=persistence, long_run_variance=long_run_variance,
+                       vol_of_vol=vol_of_vol,
+                       fd_dS_pct=fd_dS_pct, fd_dsigma=fd_dsigma)
 
     paths = []
     for vol_name, vol_val in [('conditional', vol_conditional), ('unconditional', vol_unconditional)]:
