@@ -87,15 +87,6 @@ Report intermediate checkpoints (used for partial scoring):
   portfolio's annualized volatility matches the target, using a trailing
   covariance window of `vol_lookback_days`. Do not apply scaling until
   enough return history is available.
-- Apply a one-day execution lag for the strategy P&L: the long-short
-  weights decided at the close of trading day `t` (using the signal
-  observed up through day `t`) earn the close-to-close asset return
-  realized over the next trading day `t+1`. The weight set on day `t`
-  multiplies the period-(t+1) return; do not multiply by the same-day
-  return, which would introduce look-ahead because the day-`t` signal
-  uses information that overlaps with the day-`t` price move. (The IC
-  computation reflects the same alignment: `signal[t]` vs the next-day
-  return.)
 - Transaction cost: sum of absolute weight changes × cost_bps / 10000,
   deducted from daily return.
 - Sharpe ratio: annualised with √252, using std with ddof=1.
