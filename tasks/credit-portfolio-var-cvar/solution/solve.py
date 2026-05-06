@@ -190,20 +190,17 @@ for alpha in CONF_LEVELS:
 
     C_prime = float(np.sum(weights[valid] * lgd[valid] * phi_h[valid] * dh_dalpha[valid]))
 
-    d2h_dalpha2 = np.zeros(N)
-    d2h_dalpha2[valid] = np.sqrt(rho[valid]) * z_alpha / (np.sqrt(1.0 - rho[valid]) * phi_z ** 2)
-    C_double_prime = float(np.sum(
-        weights[valid] * lgd[valid] * (
-            -h[valid] * phi_h[valid] * dh_dalpha[valid] ** 2
-            + phi_h[valid] * d2h_dalpha2[valid]
-        )
+    # Conditional default probability Φ(h_i) for each obligor at this α
+    cond_pd_at_alpha = stats.norm.cdf(h[valid])
+
+    # Conditional variance of portfolio loss rate: Σ w_i² × LGD_i² × Φ(h_i)(1-Φ(h_i))
+    cond_var_rate = float(np.sum(
+        weights[valid] ** 2 * lgd[valid] ** 2
+        * cond_pd_at_alpha * (1.0 - cond_pd_at_alpha)
     ))
 
-    # Exposure HHI weighted by LGD
-    weighted_exp = weights * lgd
-    hhi_ead_lgd = float(np.sum(weighted_exp ** 2) / (np.sum(weighted_exp)) ** 2)
-
-    ga = 0.5 * hhi_ead_lgd * C_double_prime / C_prime if abs(C_prime) > 1e-15 else 0.0
+    # Gordy GA in USD: total_exposure × σ²(α) / (2 × C'(α))
+    ga = total_exposure * cond_var_rate / (2.0 * C_prime) if abs(C_prime) > 1e-15 else 0.0
     gordy_var = v_var + ga
 
     gordy_rows.append({
