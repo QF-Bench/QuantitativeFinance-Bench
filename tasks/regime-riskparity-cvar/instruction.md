@@ -77,9 +77,12 @@ Report intermediate checkpoints (used for partial scoring):
 - Absorption ratio: fraction of variance explained by the top
   eigenvalues above the Marchenko-Pastur noise threshold.
 - Inverse-volatility weights normalised to sum to 1, then scaled by
-  risk_budget[regime].
+  risk_budget[regime]. Compute each asset's volatility as the sample
+  standard deviation of its rolling returns (ddof=1).
 - Monthly rebalance: last trading day of each calendar month.
 - Annualisation factor: 252. Sharpe with zero risk-free rate, ddof=1.
 - Maximum drawdown: report as positive magnitude.
 - CVaR: historical simulation from trailing `cvar_window` returns.
   Report as positive magnitude.
+- VaR (portfolio_var_99): report as a positive magnitude, consistent
+  with CVaR and max_drawdown.
