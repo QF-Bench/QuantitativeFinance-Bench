@@ -94,6 +94,8 @@ before applying to returns.
 
 ### GARCH Fitting and Output Units
 
+Fit GARCH with no mean term.
+
 Fit the GARCH(1,1) on the **raw** daily portfolio log-return series in its
 native units — do not rescale the returns to percent (×100) for numerical
 stability before fitting. If you choose to use a library that auto-rescales
