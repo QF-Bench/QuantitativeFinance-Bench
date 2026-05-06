@@ -130,9 +130,8 @@ Across all paths compute:
 - VaR at `var_confidence` level (loss convention: positive = loss).
   VaR is the loss at the specified confidence level: negate each
   annual return to obtain a loss, sort those losses ascending, and
-  take the value at index `ceil(var_confidence × mc_num_paths) − 1`.
-  Clamp to zero — a carry strategy that earns positive income in
-  nearly every path has zero or negligible VaR.
+  take the value at index `ceil(var_confidence × mc_num_paths) − 1`;
+  clamp to zero (no negative losses).
 - CVaR (expected shortfall): mean of losses (negated returns) that are
   strictly worse than the VaR threshold; report as a positive number.
 - Percentage of paths with negative annual return.
