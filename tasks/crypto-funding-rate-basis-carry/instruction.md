@@ -128,13 +128,21 @@ mc_horizon_periods`.
 Across all paths compute:
 - Mean and std of annualized carry return.
 - VaR at `var_confidence` level (loss convention: positive = loss).
-  Sort the `mc_num_paths` annual returns in ascending order and take
-  the value at index `ceil(var_confidence × mc_num_paths) − 1` as the
-  VaR threshold; negate it so a loss is reported as a positive number.
+  VaR is the loss at the specified confidence level: negate each
+  annual return to obtain a loss, sort those losses ascending, and
+  take the value at index `ceil(var_confidence × mc_num_paths) − 1`.
+  Clamp to zero — a carry strategy that earns positive income in
+  nearly every path has zero or negligible VaR.
 - CVaR (expected shortfall): mean of losses (negated returns) that are
   strictly worse than the VaR threshold; report as a positive number.
 - Percentage of paths with negative annual return.
 - Percentiles: 5th, 25th, 50th, 75th, 95th of annualized return.
+- For `simulated_funding_rate_distribution`: report the distribution
+  of the **per-path average** funding rate — the rate a carry position
+  actually receives on average over the horizon. For each path,
+  compute the mean of all simulated rates after the initial step; then
+  report the cross-path mean, std, and percentiles of those per-path
+  averages.
 
 ## Output Files
 
