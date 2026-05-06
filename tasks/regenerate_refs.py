@@ -308,37 +308,34 @@ def regenerate_bgv():
     print(f"  vol_conditional={vol_conditional:.6f}, vol_unconditional={vol_unconditional:.6f}")
     print(f"  realized_vol_of_vol={vol_of_vol:.6f}")
 
-    # Build 4 paths: (conditional × squared) + (conditional × linear) + (unconditional × squared) + (unconditional × linear)
+    # Single path: conditional vol × squared variance decomposition.
+    # Both axes are pinned in the spec (conditional GARCH vol from final
+    # observation; variance shares summing to 100%); the prior alt_paths
+    # for unconditional vol and linear-share decomposition were dropped
+    # because they contradict the pinned conventions rather than
+    # representing defensible alternative practitioner choices.
     common_args = dict(S0=S0, K=K, B=B, r=r, T=T, confidence_level=confidence_level,
                        n_contracts=n_contracts, omega=omega, alpha=alpha, beta=beta,
                        persistence=persistence, long_run_variance=long_run_variance,
                        vol_of_vol=vol_of_vol,
                        fd_dS_pct=fd_dS_pct, fd_dsigma=fd_dsigma)
 
-    paths = []
-    for vol_name, vol_val in [('conditional', vol_conditional), ('unconditional', vol_unconditional)]:
-        for decomp in ['squared', 'linear']:
-            path_name = f'{vol_name}_{decomp}'
-            is_primary = (vol_name == 'conditional' and decomp == 'squared')
-            d, c = _bgv_pipeline(garch_vol=vol_val, decomp_method=decomp, **common_args)
-            paths.append({
-                'name': 'primary' if is_primary else path_name,
-                'description': f'vol={vol_name} ({"sqrt(cond_var[-1]*252)" if vol_name == "conditional" else "sqrt(LRV*252)"}), decomp={decomp}',
-                'primary': is_primary,
-                'deliverables': d,
-                'checkpoints': c,
-            })
-            if is_primary:
-                print(f"  garch_vol={vol_val:.6f}")
-                print(f"  analytical_price={c['analytical_price']['value']:.6f}")
-                print(f"  delta={c['delta']['value']:.6f}, gamma={c['gamma']['value']:.6f}, vega={c['vega']['value']:.6f}")
-                print(f"  portfolio_var={d[0]['value']:.6f}")
-                print(f"  delta_var_pct={d[1]['value']:.2f}, gamma_var_pct={d[2]['value']:.2f}, vega_var_pct={d[3]['value']:.2f}")
+    d, c = _bgv_pipeline(garch_vol=vol_conditional, decomp_method='squared', **common_args)
+    paths = [{
+        'name': 'primary',
+        'description': 'vol=conditional (sqrt(cond_var[-1]*252)), decomp=squared',
+        'primary': True,
+        'deliverables': d,
+        'checkpoints': c,
+    }]
 
-    # Primary = first path (conditional × squared)
-    primary_d = paths[0]['deliverables']
-    primary_c = paths[0]['checkpoints']
-    write_refs_multipath(task_dir, paths, primary_d, primary_c,
+    print(f"  garch_vol={vol_conditional:.6f}")
+    print(f"  analytical_price={c['analytical_price']['value']:.6f}")
+    print(f"  delta={c['delta']['value']:.6f}, gamma={c['gamma']['value']:.6f}, vega={c['vega']['value']:.6f}")
+    print(f"  portfolio_var={d[0]['value']:.6f}")
+    print(f"  delta_var_pct={d[1]['value']:.2f}, gamma_var_pct={d[2]['value']:.2f}, vega_var_pct={d[3]['value']:.2f}")
+
+    write_refs_multipath(task_dir, paths, d, c,
                          'barrier-garch-var', ['DV', 'VOL', 'RISK'])
 
 
