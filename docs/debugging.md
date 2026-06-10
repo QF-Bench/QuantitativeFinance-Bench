@@ -133,3 +133,19 @@ Each task's `result.json` contains timing, token usage, and cost:
   }
 }
 ```
+
+## 6. Verify the Task Snapshot
+
+If a run fails in a way that suggests the agent saw a different instruction,
+test, or data file than the verifier used, generate a deterministic task
+fingerprint from the repository checkout you intended to run:
+
+```bash
+python tools/task_fingerprint.py tasks/13f-amendment-aware-crowding
+```
+
+The output includes one SHA-256 hash per task file and an
+`aggregate_sha256` for the full task snapshot.  Harness operators can store
+this JSON next to `config.json` before launching a sweep, then compare it to a
+later checkout when investigating stale specs, pre-merge task branches, or
+data-file rewrites.
