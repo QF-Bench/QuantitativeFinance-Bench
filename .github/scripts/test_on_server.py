@@ -22,6 +22,12 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from canary_utils import validate_all_tasks, validate_task_canary
+
 REQUIRED_FILES = [
     "task.toml",
     "instruction.md",
@@ -30,7 +36,7 @@ REQUIRED_FILES = [
     "tests/test_outputs.py",
     "solution/solve.sh",
 ]
-CANARY = "finance-bench-canary GUID"
+TASKS_ROOT = Path("tasks")
 RESULTS_FILE = Path("/tmp/test_deploy_results.json")
 LOCK_FILE = Path("/tmp/test_deploy.lock")
 BENCH_TOKEN_FILE = Path("/root/.claude_bench_token")
@@ -208,18 +214,12 @@ def validate_structure(task_dir: Path) -> tuple[bool, list[str]]:
 
 
 def validate_canary(task_dir: Path) -> tuple[bool, list[str]]:
-    missing = []
-    for pattern in ("**/*.py", "**/*.sh", "**/Dockerfile"):
-        for f in task_dir.glob(pattern):
-            try:
-                text = f.read_text()
-            except Exception as e:
-                # Treat unreadable files as validation failures so the workflow can surface the problem.
-                missing.append(f"{f.relative_to(task_dir)} (unreadable: {e.__class__.__name__})")
-                continue
-            if CANARY not in text:
-                missing.append(str(f.relative_to(task_dir)))
-    return len(missing) == 0, missing
+    return validate_task_canary(task_dir)
+
+
+def validate_repo_canaries() -> tuple[bool, list[str]]:
+    """Ensure every task has canaries and all task GUIDs are globally unique."""
+    return validate_all_tasks(TASKS_ROOT)
 
 
 # ---------------------------------------------------------------------------
@@ -415,6 +415,22 @@ def main() -> None:
             return
 
         log(f"Changed tasks: {changed}")
+
+        # -- Global canary uniqueness (all tasks, not just changed) --
+        log(">>> Validating canary GUID uniqueness across all tasks...")
+        repo_canary_ok, repo_canary_issues = validate_repo_canaries()
+        if not repo_canary_ok:
+            log("  FAIL repo-wide canary validation:")
+            for issue in repo_canary_issues:
+                log(f"    - {issue}")
+            RESULTS_FILE.write_text(json.dumps({
+                "status": "error",
+                "error": "Repo-wide canary validation failed",
+                "details": repo_canary_issues,
+            }, indent=2))
+            return
+
+        log("  OK: all tasks have unique canary GUIDs")
 
         # -- Build sandbox base image --
         log(">>> Building sandbox base image (if needed)...")
