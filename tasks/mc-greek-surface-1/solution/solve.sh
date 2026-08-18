@@ -350,7 +350,7 @@ pcp_gamma = fd_eu_call['gamma'] - fd_eu_put['gamma']
 pcp_vega = fd_eu_call['vega'] - fd_eu_put['vega']
 
 consistency = {
-    "bs_comparison": {
+    "bs_errors": {
         "european_call": {g: {"mc_fd": float(fd_eu_call[g]), "bs": float(bs_vals_call[g]),
                               "abs_diff": float(abs(fd_eu_call[g] - bs_vals_call[g]))}
                          for g in ['delta', 'gamma', 'vega', 'theta', 'rho']},
@@ -371,7 +371,7 @@ consistency = {
         "lr_se": lr_se,
         "pw_less_than_lr": bool(pw_var < lr_var),
     },
-    "asian_less_than_european": {
+    "asian_vs_european": {
         "call": bool(as_call < eu_call),
         "put": bool(as_put < eu_put),
     },

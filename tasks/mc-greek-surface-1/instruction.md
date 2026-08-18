@@ -87,9 +87,9 @@ For each of the four options, compute five Greeks using central differences:
 The pathwise method differentiates the payoff with respect to the underlying parameters.
 
 **For European options:**
-- **Delta**: Indicator of ITM × (S_T / S₀) × e^(−rT). The result is in dollars per dollar of spot move.
-- **Vega**: Indicator of ITM × S_T × (terms involving σ and Z). The score function weighting produces output in dollars per 1% volatility change.
-- **Theta**: Indicator of ITM × (terms involving drift and time). Output is in dollars per day.
+- **Delta**: Differentiate the payoff with respect to S₀. The result is in dollars per dollar of spot move.
+- **Vega**: Differentiate the payoff with respect to σ. Output is in dollars per 1% volatility change.
+- **Theta**: Differentiate the payoff with respect to time. Output is in dollars per day.
 - **Rho**: Use the score function for interest rates; output is in dollars per 1% rate change.
 - **Gamma**: NOT AVAILABLE — the indicator function is non-differentiable; report `null`
 
@@ -106,17 +106,13 @@ The likelihood ratio method weights the payoff by the log-derivative of the unde
 
 **Guidance on implementation:**
 
-- **Delta** (dollars per 1% spot move): Weight payoff by `Z / (S₀ σ √T)`. This produces the score function with respect to log-spot.
+- **Delta** (dollars per dollar of spot move): Use the score function with respect to the spot level S₀.
 
-- **Gamma** (delta per $1 spot move): Use the score function for the second derivative of the log-likelihood with respect to S₀:
+- **Gamma** (delta per $1 spot move): Use the second derivative of the log-likelihood with respect to the spot level S₀. This estimator is noisier than FD gamma.
 
-  $$\Gamma^{\text{LR}} = e^{-rT} \cdot \mathbb{E}\!\left[\text{payoff}(S_T) \cdot \frac{Z^2 - 1 - Z\,\sigma\sqrt{T}}{(S_0\,\sigma\,\sqrt{T})^2}\right]$$
+- **Vega** (dollars per 1% volatility change): Use the score function with respect to σ.
 
-  where $Z = \bigl(\ln(S_T/S_0) - (r - q - \tfrac{1}{2}\sigma^2)T\bigr)/(\sigma\sqrt{T})$ is the standard normal draw used to simulate $S_T$. This estimator is noisier than FD gamma; allow 10% tolerance against the BS benchmark.
-
-- **Vega** (dollars per 1% volatility change): Weight by `payoff × [(Z² − 1) / σ − Z√T]`. This is the score function with respect to log-volatility.
-
-- **Rho** (dollars per 1% rate change): Weight by `payoff × [Z√T / σ − T]`. This is the score function with respect to the rate.
+- **Rho** (dollars per 1% rate change): Use the score function with respect to the rate.
 
 - **Theta**: NOT AVAILABLE — the score function for time is complex and model-dependent; report `null`
 
@@ -134,7 +130,7 @@ Report both the variance and the standard error (SE) of the delta estimate under
 ### Step 7: Put-Call Parity Relationships
 
 For European options, put-call parity induces relationships between Greeks. Check that your FD Greeks satisfy:
-- Delta difference: Call delta − Put delta ≈ e^(−qT) (allowing ±0.005 tolerance)
+- Delta difference: Call delta − Put delta ≈ e^(−qT)
 - Gamma difference: Call gamma − Put gamma ≈ 0 (within ±0.001)
 - Rho difference: Call rho − Put rho ≈ K × T × e^(−rT) (within ±1.0)
 
@@ -167,7 +163,12 @@ The estimates should converge to the Black-Scholes delta as N increases. At N=50
 Write results to the `OUTPUT_DIR` (environment variable, default `/app/output/`):
 
 1. **`prices.json`**
-   Structure: Per option type, include MC price, MC standard error, and (for Europeans only) BS reference price.
+   Nested: `[option_type] = {"mc_price": <float>, "mc_se": <float>, "bs_price": <float>}`.
+
+   **Exact key names — do not rename:**
+   - Option types: `"european_call"`, `"european_put"`, `"asian_call"`, `"asian_put"`
+   - Fields: `"mc_price"` (MC price), `"mc_se"` (MC standard error), `"bs_price"`
+     (Black-Scholes reference price; Europeans only — omit it for the Asians).
 
 2. **`greeks.json`**
    Nested: `[option_type][greek_name][method] = {"value": <float|null>, "se": <float|null>}`.
@@ -223,7 +224,7 @@ Write results to the `OUTPUT_DIR` (environment variable, default `/app/output/`)
 - **Reproducibility**: Fix the random seed at the module level using `np.random.RandomState(42)`.
 - **Black-Scholes**: Implement the standard formulas for pricing and Greeks (d1, d2, N(·), N'(·), etc.).
 - **Error Handling**: Report `null` or `NaN` for unavailable Greeks; do not attempt to compute pathwise gamma or LR theta.
-- **Tolerance Levels**: Allow 5% relative error for Greeks vs. BS; use tighter tolerances for parity checks.
+- **Tolerance Levels**: Judge for yourself what precision each estimator needs; parity checks should hold more tightly than Greeks vs. BS.
 
 ---
 
@@ -231,7 +232,7 @@ Write results to the `OUTPUT_DIR` (environment variable, default `/app/output/`)
 
 - All 8 output files generated
 - MC prices match BS within reasonable error bounds
-- All three Greeks methods produce values within 5% of BS (where applicable)
+- All three Greeks methods agree with BS (where applicable)
 - Put-call parity relationships verified
 - Pathwise variance < LR variance for delta
 - Delta and vega surfaces smooth and monotone
