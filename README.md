@@ -4,7 +4,7 @@
 
 QuantitativeFinance-Bench evaluates AI agents acting like real quants: navigating stateful
 environments, handling dirty data, debugging runtime errors, and producing
-verifiable numeric outputs -- all inside a secure, air-gapped sandbox.
+verifiable numeric outputs—all inside a secure, air-gapped sandbox.
 
 QuantitativeFinance-Bench is **not** a standalone runner.
 It is a **dataset** that runs on top of
