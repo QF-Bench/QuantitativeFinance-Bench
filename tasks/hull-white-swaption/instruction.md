@@ -194,7 +194,7 @@ Add this at the top of your script:
 
 ```python
 import os
-OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "./output")
+OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "/output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 ```
 
