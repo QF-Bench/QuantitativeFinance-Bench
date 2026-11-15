@@ -3,10 +3,12 @@
 
 import json
 import os
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.stats import f as f_distribution, t as t_distribution
 
 OUTPUT_DIR = Path(os.environ.get('OUTPUT_DIR', '/app/output'))
 
@@ -781,21 +783,159 @@ def test_rolling_betas_chart_nonzero():
 INPUT_DIR = Path("/app")
 
 
-def test_all_rolling_windows_and_summaries():
-    """Check all dates and market betas with an independent multivariate QR fit."""
-    prices = pd.read_csv(INPUT_DIR / "stock_prices.csv", index_col=0, parse_dates=True)
-    factors = pd.read_csv(INPUT_DIR / "ff3_factors_daily.csv", index_col=0, parse_dates=True)
+@lru_cache(maxsize=None)
+def _factor_inputs(input_dir):
+    prices = pd.read_csv(input_dir / "stock_prices.csv", index_col=0, parse_dates=True)
+    factors = pd.read_csv(input_dir / "ff3_factors_daily.csv", index_col=0, parse_dates=True)
     returns = prices.pct_change(fill_method=None).iloc[1:]
     common_dates = returns.index.intersection(factors.index)
     tickers = sorted(returns.columns)
     factors = factors.loc[common_dates]
     x = np.column_stack((np.ones(len(common_dates)), factors[["Mkt-RF", "SMB", "HML"]]))
     y = returns.loc[common_dates, tickers].to_numpy() - factors["RF"].to_numpy()[:, None]
+    return common_dates, tickers, x, y
+
+
+@lru_cache(maxsize=None)
+def _full_sample_metrics(input_dir):
+    """Reconstruct every full-sample quantity from inputs using a joint QR fit."""
+    _, tickers, x, y = _factor_inputs(input_dir)
+    n, n_stocks = y.shape
+    df = n - x.shape[1]
+    q, r = np.linalg.qr(x, mode="reduced")
+    coefficients = np.linalg.solve(r, q.T @ y)
+    residuals = y - x @ coefficients
+    inverse_r = np.linalg.solve(r, np.eye(r.shape[0]))
+    bread = inverse_r @ inverse_r.T
+    lag_count = int(np.floor(4 * (n / 100) ** (2 / 9)))
+    stocks = {}
+    for column, ticker in enumerate(tickers):
+        e = residuals[:, column]
+        rss = e @ e
+        r_squared = 1 - rss / np.sum((y[:, column] - y[:, column].mean()) ** 2)
+        ols_covariance = (rss / df) * bread
+        # Coefficient influence contributions give the same raw-sum HAC
+        # sandwich without an additional finite-sample correction.
+        influence = (x @ bread) * e[:, None]
+        nw_covariance = influence.T @ influence
+        for lag in range(1, lag_count + 1):
+            cross = influence[lag:].T @ influence[:-lag]
+            nw_covariance += (1 - lag / (lag_count + 1)) * (cross + cross.T)
+        alpha, beta_mkt, beta_smb, beta_hml = coefficients[:, column]
+        t_ols = alpha / np.sqrt(ols_covariance[0, 0])
+        t_nw = alpha / np.sqrt(nw_covariance[0, 0])
+        ann_excess = y[:, column].mean() * 252
+        stocks[ticker] = {
+            "alpha_daily": alpha, "alpha_annualized": alpha * 252,
+            "beta_mkt": beta_mkt, "beta_smb": beta_smb, "beta_hml": beta_hml,
+            "r_squared": r_squared,
+            "adj_r_squared": 1 - (1 - r_squared) * (n - 1) / df,
+            "t_stat_alpha": t_ols, "p_value_alpha": 2 * t_distribution.sf(abs(t_ols), df),
+            "t_stat_alpha_nw": t_nw, "p_value_alpha_nw": 2 * t_distribution.sf(abs(t_nw), df),
+            "durbin_watson": np.sum(np.diff(e) ** 2) / rss,
+            "information_ratio": alpha * 252 / (e.std(ddof=1) * np.sqrt(252)),
+            "treynor_ratio": ann_excess / beta_mkt, "ann_excess_return": ann_excess,
+        }
+    factors = x[:, 1:]
+    factor_mean = factors.mean(axis=0)
+    centered_factors = factors - factor_mean
+    sigma = residuals.T @ residuals / n
+    omega = centered_factors.T @ centered_factors / n
+    alphas = coefficients[0]
+    grs = ((n - n_stocks - 3) / n_stocks) * (alphas @ np.linalg.solve(sigma, alphas)) / (
+        1 + factor_mean @ np.linalg.solve(omega, factor_mean))
+    # The diagonal inverse correlation is the constant-including regression VIF.
+    vifs = np.diag(np.linalg.inv(np.corrcoef(factors, rowvar=False)))
+    return {
+        "stocks": stocks, "nw_lag": lag_count,
+        "grs_statistic": grs, "grs_p_value": f_distribution.sf(grs, n_stocks, n - n_stocks - 3),
+        "df1": n_stocks, "df2": n - n_stocks - 3,
+        "vifs": dict(zip(["vif_mkt_rf", "vif_smb", "vif_hml"], vifs)),
+    }
+
+
+def _metric_tolerance(field):
+    decimals = 8 if field == "alpha_daily" else 4 if field in {
+        "t_stat_alpha", "t_stat_alpha_nw", "grs_statistic",
+        "vif_mkt_rf", "vif_smb", "vif_hml",
+    } else 6
+    return 0.50001 * 10 ** (-decimals)
+
+
+def _assert_metric(actual, expected, field, label):
+    assert not isinstance(actual, (bool, np.bool_)), label
+    assert np.isfinite(actual), label
+    assert np.isclose(actual, expected, rtol=0, atol=_metric_tolerance(field)), (
+        label, actual, expected)
+
+
+def test_all_full_sample_stock_metrics():
+    expected = _full_sample_metrics(INPUT_DIR)["stocks"]
+    reported = _load_results()
+    assert set(reported["stocks"]) == set(expected)
+    for ticker, values in expected.items():
+        for field, value in values.items():
+            _assert_metric(reported["stocks"][ticker][field], value, field, (ticker, field))
+    assert reported["alpha_ranking"] == sorted(
+        expected, key=lambda ticker: expected[ticker]["alpha_annualized"], reverse=True)
+
+
+def test_all_regression_summary_values():
+    expected = _full_sample_metrics(INPUT_DIR)["stocks"]
+    reported = pd.read_csv(OUTPUT_DIR / "regression_summary.csv").set_index("ticker")
+    assert reported.index.tolist() == sorted(expected)
+    fields = ["alpha_annualized", "beta_mkt", "beta_smb", "beta_hml", "r_squared",
+              "adj_r_squared", "t_stat_alpha", "p_value_alpha", "t_stat_alpha_nw",
+              "p_value_alpha_nw", "durbin_watson", "information_ratio", "treynor_ratio"]
+    for ticker, values in expected.items():
+        for field in fields:
+            _assert_metric(reported.loc[ticker, field], values[field], field, (ticker, field))
+
+
+def test_all_sector_summary_values():
+    expected = _full_sample_metrics(INPUT_DIR)["stocks"]
+    sectors = {"Finance": ["JPM", "GS", "V", "BRK-B"],
+               "IT": ["AAPL", "MSFT", "GOOGL"], "Services": ["AMZN", "MCD", "UNH"]}
+    reported = pd.read_csv(OUTPUT_DIR / "sector_summary.csv").set_index("sector")
+    assert reported.index.tolist() == sorted(sectors)
+    for sector, members in sectors.items():
+        for field in ["alpha_annualized", "beta_mkt", "r_squared"]:
+            value = np.mean([expected[ticker][field] for ticker in members])
+            actual = reported.loc[sector, "avg_" + field]
+            # Accept both averaging full-precision values and averaging rounded
+            # six-decimal stock fields followed by six-decimal serialization.
+            assert np.isfinite(actual) and np.isclose(actual, value, rtol=0, atol=1.00001e-6), (
+                sector, field, actual, value)
+
+
+def test_all_joint_factor_diagnostics():
+    expected = _full_sample_metrics(INPUT_DIR)
+    reported = _load_results()
+    grs = reported["grs_test"]
+    for field in ["grs_statistic", "grs_p_value"]:
+        _assert_metric(grs[field], expected[field], field, field)
+    for field in ["df1", "df2"]:
+        assert grs[field] == expected[field]
+    assert grs["grs_rejected"] is bool(expected["grs_p_value"] < 0.05)
+    for field, value in expected["vifs"].items():
+        _assert_metric(reported["factor_diagnostics"][field], value, field, field)
+    assert reported["factor_diagnostics"]["nw_lag"] == expected["nw_lag"]
+
+
+@lru_cache(maxsize=None)
+def _rolling_market_betas(input_dir):
+    common_dates, _, x, y = _factor_inputs(input_dir)
     betas = []
     for start in range(len(common_dates) - 251):
         q, r = np.linalg.qr(x[start:start+252], mode="reduced")
         betas.append(np.linalg.solve(r, q.T @ y[start:start+252])[1])
-    expected = np.asarray(betas)
+    return np.asarray(betas)
+
+
+def test_all_rolling_windows_and_summaries():
+    """Check all dates and market betas with an independent multivariate QR fit."""
+    common_dates, tickers, _, _ = _factor_inputs(INPUT_DIR)
+    expected = _rolling_market_betas(INPUT_DIR)
     reported = pd.read_csv(OUTPUT_DIR / "rolling_betas.csv")
     assert reported["date"].tolist() == common_dates[251:].strftime("%Y-%m-%d").tolist()
     # Six-decimal serialization is accepted, with a small floating-point allowance.
