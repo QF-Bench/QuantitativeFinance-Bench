@@ -415,6 +415,8 @@ def _write_kelly_refs(ref_dir, primary_results, checkpoints_values,
     with open(os.path.join(ref_dir, 'alt_paths.json')) as f:
         alt_data = json.load(f)
 
+    # Excess-return Sharpe contradicts this task's explicit raw-return contract.
+    alt_data['paths'] = [p for p in alt_data['paths'] if p['name'] != 'sharpe_excess']
     alt_result_maps = {
         'primary': primary_results,
         'rf_compound': alt_rf,
