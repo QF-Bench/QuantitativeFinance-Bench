@@ -346,8 +346,8 @@ def main():
 
     # 6. exercise_boundary.png
     fig, ax = plt.subplots(figsize=(10, 6))
-    mask = boundary_s > 0
-    ax.plot(boundary_t[mask], boundary_s[mask], "b-", linewidth=1.5)
+    # Keep zero-boundary dates: omitting them draws false ramps across no-exercise intervals.
+    ax.plot(boundary_t, boundary_s, "b-", linewidth=1.5)
     ax.axhline(y=K, color="r", linestyle="--", alpha=0.5, label=f"K={K}")
     ax.set_xlabel("Time t")
     ax.set_ylabel("Critical Stock Price S*(t)")
