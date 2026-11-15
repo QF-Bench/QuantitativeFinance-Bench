@@ -312,7 +312,9 @@ def check_intermediates(
             # No label match — try value matching against all unmatched refs
             value_matched_ref = None
             for ref_name, ref_cp in checkpoints_ref.items():
-                if ref_name in matched_refs:
+                # A supplied canonical field owns its checkpoint, even when wrong.
+                # A value alias must not replace it or manufacture correctness credit.
+                if ref_name in matched_refs or ref_name in intermediates:
                     continue
                 if agent_value is not None:
                     tol = ref_cp.get("tolerance", {"rtol": 1e-3})
@@ -362,7 +364,10 @@ def check_intermediates(
     # ── Coverage ──
     total_expected = len(checkpoints_ref)
     reported = sum(1 for r in checkpoint_results if r["status"] != "MISSING")
-    correct = sum(1 for r in checkpoint_results if r["status"] == "CORRECT")
+    # Value aliases and canonical labels represent the same checkpoint.
+    # Count each reference identity once so extra metadata cannot inflate reward.
+    correct = len({r.get("matched_as", r["term"]) for r in checkpoint_results
+                   if r["status"] == "CORRECT"})
 
     completeness = "COMPLETE" if all(
         r["status"] != "MISSING" for r in checkpoint_results
@@ -652,7 +657,9 @@ def _apply_task_checks(agent_outputs, cc, checks, ref):
             result['status'] = 'INCORRECT'
             result['error_class'] = 'semantic'
             result['semantic_error'] = errors[name]
-    checks['correct'] = sum(r['status'] == 'CORRECT' for r in checks.get('results', []))
+    checks['correct'] = len({r.get('matched_as', r['term'])
+                             for r in checks.get('results', [])
+                             if r['status'] == 'CORRECT'})
     checks['structure']['semantic_errors'] = errors
 
 
