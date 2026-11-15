@@ -1,7 +1,7 @@
 {
   "checkpoints": {
     "garch_omega": {
-      "value": 2.117783767122164e-06,
+      "value": 2.117814150010921e-06,
       "concept": "vol.garch",
       "domain": "DV",
       "tolerance": {
@@ -10,7 +10,7 @@
       "siblings": {}
     },
     "garch_alpha": {
-      "value": 0.015851259419804507,
+      "value": 0.0158513994520911,
       "concept": "vol.garch",
       "domain": "DV",
       "tolerance": {
@@ -19,7 +19,7 @@
       "siblings": {}
     },
     "garch_beta": {
-      "value": 0.9746670081834722,
+      "value": 0.9746666942156019,
       "concept": "vol.garch",
       "domain": "DV",
       "tolerance": {
@@ -28,7 +28,7 @@
       "siblings": {}
     },
     "garch_persistence": {
-      "value": 0.9905182676032767,
+      "value": 0.9905180936676931,
       "concept": "vol.garch",
       "domain": "DV",
       "tolerance": {
@@ -37,7 +37,7 @@
       "siblings": {}
     },
     "long_run_variance": {
-      "value": 0.00022335409590909982,
+      "value": 0.00022335320301520607,
       "concept": "vol.garch",
       "domain": "DV",
       "tolerance": {
@@ -46,7 +46,7 @@
       "siblings": {}
     },
     "garch_vol": {
-      "value": 0.2586800935963609,
+      "value": 0.25867982508879794,
       "concept": "vol.garch",
       "domain": "DV",
       "tolerance": {
@@ -65,7 +65,7 @@
       "siblings": {}
     },
     "option_unit_price": {
-      "value": 2.8723811969778144,
+      "value": 2.872377122990316,
       "concept": "dv.barrier_option",
       "domain": "DV",
       "tolerance": {
@@ -75,7 +75,7 @@
       "siblings": {}
     },
     "option_value": {
-      "value": 40.743124195678774,
+      "value": 40.74306640843981,
       "concept": "dv.barrier_option",
       "domain": "DV",
       "tolerance": {
@@ -94,7 +94,7 @@
       "siblings": {}
     },
     "option_delta": {
-      "value": 0.4220772133647326,
+      "value": 0.42207708119471127,
       "concept": "dv.bsm_analytical",
       "domain": "DV",
       "tolerance": {
@@ -104,7 +104,7 @@
       "siblings": {}
     },
     "note_delta": {
-      "value": 5.986929709183071,
+      "value": 5.986927834425083,
       "concept": "",
       "domain": "DV",
       "tolerance": {

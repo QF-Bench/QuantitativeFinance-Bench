@@ -22,7 +22,7 @@
     },
     {
       "name": "median_terminal_wealth_full",
-      "value": 1120532.6156310705,
+      "value": 1135416.2786237118,
       "path": "results.json:median_terminal_wealth_full",
       "tolerance": {
         "rtol": 0.05,
@@ -31,7 +31,7 @@
     },
     {
       "name": "median_terminal_wealth_var",
-      "value": 1081437.7246654786,
+      "value": 1110600.0626869001,
       "path": "results.json:median_terminal_wealth_var",
       "tolerance": {
         "rtol": 0.05,
@@ -40,7 +40,7 @@
     },
     {
       "name": "sharpe_full",
-      "value": 0.48233523943596884,
+      "value": 0.5146198966858644,
       "path": "results.json:sharpe_full",
       "tolerance": {
         "rtol": 0.05,
@@ -49,7 +49,7 @@
     },
     {
       "name": "sharpe_var",
-      "value": 0.46125403016881034,
+      "value": 0.5914102473423168,
       "path": "results.json:sharpe_var",
       "tolerance": {
         "rtol": 0.05,
@@ -58,7 +58,7 @@
     },
     {
       "name": "p50_drawdown_full",
-      "value": 0.33189818974276614,
+      "value": 0.3291675751123119,
       "path": "results.json:p50_drawdown_full",
       "tolerance": {
         "rtol": 0.05,
@@ -67,7 +67,7 @@
     },
     {
       "name": "p50_drawdown_var",
-      "value": 0.17702645071353354,
+      "value": 0.17024519608361177,
       "path": "results.json:p50_drawdown_var",
       "tolerance": {
         "rtol": 0.05,

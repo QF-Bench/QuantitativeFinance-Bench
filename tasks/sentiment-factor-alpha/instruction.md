@@ -82,13 +82,23 @@ Report intermediate checkpoints (used for partial scoring):
   filter posts on any other criterion. In particular, posts whose
   timestamps fall on non-trading days (weekends, holidays) are **valid**
   and counted in `num_valid_posts`.
+- Interpret the timestamp strings as UTC. For this dataset, the daily
+  close and information cutoff are 20:00 UTC; all supplied trading-date
+  posts precede that cutoff. The date labels refer to these closes.
+- Score a post by lowercasing its text, splitting on whitespace, removing
+  every character other than `a` through `z` from each token, and counting
+  bullish token occurrences minus bearish token occurrences. Repeated
+  tokens count repeatedly; do not normalize by token count.
 - Engagement multiplier (when enabled):
   1 + ln(1 + likes + 2 × retweets + 3 × replies).
   **A *final score* is the per-post engagement-weighted sentiment score:
   `final_score_post = sentiment_score × engagement_multiplier`.
   `mean_weighted_score` is the arithmetic mean of `final_score_post` over
   the subset of valid posts whose final score is nonzero (this subset
-  count is reported as the `num_scored_nonzero` intermediate).**
+  count is reported as the `num_scored_nonzero` intermediate).** Compute
+  these per-post statistics over all valid posts before filtering to
+  trading dates. Daily ticker aggregates are sums of the final scores,
+  not means. The daily post count includes valid zero-score posts.
 - Momentum signal: current-day aggregate minus mean of previous
   `momentum_lookback_days` aggregates. Days with no posts count as 0.
   Skip tickers with fewer than `volume_filter_min_posts` posts on the
@@ -103,7 +113,8 @@ Report intermediate checkpoints (used for partial scoring):
   position weights by a single multiplicative factor so the portfolio's
   forecast annualized volatility matches the target. Use the
   **ex-ante** portfolio-volatility estimator built from the trailing
-  asset-return covariance matrix (window = `vol_lookback_days`):
+  asset-return covariance matrix (window = `vol_lookback_days`, sample
+  covariance with ddof=1, including the return ending at close `t`):
   treat the position vector as fixed, multiply it through the trailing
   covariance to obtain a daily portfolio variance, then annualize by
   ×252 and take the square root. Do **not** substitute the realized
@@ -135,6 +146,19 @@ Report intermediate checkpoints (used for partial scoring):
   computation reflects the same alignment: `signal[t]` vs the next-day
   return.)
 - Sharpe ratio: annualised with √252, using std with ddof=1.
-- Maximum drawdown: report as positive magnitude.
+- Evaluate performance and OLS only on next-day returns from signals
+  dated index `momentum_lookback_days` through the penultimate price date
+  (zero-based). This gives 498 return dates here; exclude the initial
+  idle warm-up dates. Transaction costs for the close-t weight change
+  are charged to its following return. Start previous weights at zero.
+- `annualized_return` is 252 times the arithmetic mean daily strategy
+  return; `total_return` compounds those simple daily returns.
+- Maximum drawdown: report as positive magnitude, including initial
+  wealth 1 as the first possible running peak.
+- Fit OLS with an intercept to the strategy returns and same-date
+  `mkt_rf`; the strategy risk-free rate is zero. Report the classical
+  intercept t-statistic (alpha divided by its intercept standard error,
+  with residual degrees of freedom n-2), not the slope standard error.
+  R-squared is in [0,1].
 - Annualise alpha by × 252 (simple multiplication).
 - Spearman IC: skip days with fewer than 3 valid tickers.

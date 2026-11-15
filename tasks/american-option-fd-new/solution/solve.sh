@@ -119,31 +119,36 @@ def price_option(N_S, N_T, option_type, exercise_type,
                 break
 
         if apply_dividend:
-            V_adj = np.zeros(N_S + 1)
-            for i in range(N_S + 1):
-                S_shifted = S[i] - div_amount
-                if S_shifted <= 0:
-                    V_adj[i] = (K * np.exp(-r * tau_old)) if option_type == "put" else 0.0
-                elif S_shifted >= S_max:
-                    V_adj[i] = 0.0 if option_type == "put" else (S_max - K * np.exp(-r * tau_old))
-                else:
-                    j = int(S_shifted / dS)
-                    j = min(j, N_S - 1)
-                    frac = (S_shifted - S[j]) / dS
-                    V_adj[i] = V[j] + frac * (V[j + 1] - V[j])
-            V = V_adj
+            # The stored event value is post-dividend. Map to the pre-dividend
+            # stock, then allow immediate exercise before stepping further back.
+            V = np.interp(np.maximum(S - div_amount, 0.0), S, V)
+            if exercise_type == "american":
+                V = np.maximum(V, payoff)
+            assert np.all(np.isfinite(V)) and np.all(V >= -tol)
+            if exercise_type == "american":
+                assert np.all(V >= payoff - tol)
 
-        # Boundary conditions
+        # Far-field calls may exercise before any future dividend or at expiry.
+        # For Europeans only the expiry cashflow is available. At t_old on an
+        # event the jump above has made V a pre-dividend value (include that D).
+        def upper_call_boundary(t, include_current):
+            future = [(td, amount) for td, amount in zip(dividends_times, dividends_amounts)
+                      if td > t + 1e-12 or (include_current and abs(td - t) < 1e-12)]
+            horizons = [T] if exercise_type == "european" else [t, T] + [td for td, _ in future]
+            return max(S_max - K * np.exp(-r * (u - t))
+                       - sum(amount * np.exp(-r * (td - t))
+                             for td, amount in future if td < u - 1e-12)
+                       for u in horizons)
+
         if option_type == "put":
-            V_bc_new_0 = K * np.exp(-r * tau_new)
+            V_bc_new_0 = K if exercise_type == "american" else K * np.exp(-r * tau_new)
             V_bc_new_N = 0.0
-            V_bc_old_0 = K * np.exp(-r * tau_old)
+            V_bc_old_0 = K if exercise_type == "american" else K * np.exp(-r * tau_old)
             V_bc_old_N = 0.0
         else:
-            V_bc_new_0 = 0.0
-            V_bc_new_N = S_max - K * np.exp(-r * tau_new)
-            V_bc_old_0 = 0.0
-            V_bc_old_N = S_max - K * np.exp(-r * tau_old)
+            V_bc_new_0 = V_bc_old_0 = 0.0
+            V_bc_new_N = upper_call_boundary(n * dt, False)
+            V_bc_old_N = upper_call_boundary((n + 1) * dt, apply_dividend)
 
         V[0] = V_bc_old_0
         V[N_S] = V_bc_old_N
@@ -182,6 +187,8 @@ def price_option(N_S, N_T, option_type, exercise_type,
         V[1:N_S] = V_interior
         V[0] = V_bc_new_0
         V[N_S] = V_bc_new_N
+        if exercise_type == "american":
+            assert np.all(V >= payoff - tol), "American grid below immediate exercise"
 
         # Extract exercise boundary
         if return_boundary and option_type == "put" and exercise_type == "american":
@@ -260,7 +267,7 @@ def main():
     boundary_t = res_am_put["boundary_t"]
     boundary_s = res_am_put["boundary"]
 
-    # Step 6: Grid convergence
+    # Step 6: Two-grid Richardson heuristic (second-order error assumed)
     print("Step 6: Grid convergence ...")
     N_S_coarse = 150
     N_T_coarse = 300
@@ -273,6 +280,7 @@ def main():
 
     err_fine = abs(P_fine - P_richardson)
     err_coarse = abs(P_coarse - P_richardson)
+    # This ratio is algebraically four, not an empirical convergence estimate.
     conv_ratio = err_coarse / err_fine if err_fine > 1e-10 else float("inf")
 
     print(f"  Fine:       {P_fine:.6f}")

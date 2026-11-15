@@ -165,7 +165,8 @@ Save to `/app/output/daily_portfolio.csv` with columns:
 
     date,cumulative_return
 
-The cumulative return series starts at 1.0 on day 1.
+The cumulative return series starts at 1.0 on day 1. Write these return ratios
+with at least six decimal places.
 
 ### 4d. Interactive Plotly Chart
 

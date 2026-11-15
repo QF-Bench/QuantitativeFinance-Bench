@@ -33,11 +33,24 @@ The PDE is solved **backward** in time, from $t = T$ (terminal condition) to $t 
 
 ### Step 1: Implement the Crank-Nicolson PSOR Pricer
 
-You should know the Black-Scholes PDE and how to apply standard discounted-payoff Dirichlet boundary conditions. Implement the Crank-Nicolson scheme with PSOR projection (converge to tolerance $10^{-8}$).
+Implement the Black-Scholes PDE using Crank-Nicolson with PSOR projection
+(converge to tolerance $10^{-8}$). Use exercise-appropriate boundaries: at $S=0$,
+the American put is worth $K$, the European put is worth $K e^{-r(T-t)}$, and calls
+are zero. At $S_{\max}$ puts are zero. For a European call use
+$S_{\max}-\sum_{t_d>t} D_d e^{-r(t_d-t)}-K e^{-r(T-t)}$.
+For an American call use the maximum far-field value from exercising now,
+immediately before any remaining dividend, or at expiry: for each such horizon $u$,
+$S_{\max}-\sum_{t\le t_d<u}D_d e^{-r(t_d-t)}-K e^{-r(u-t)}$.
+Include a dividend at $t$ in this sum only when evaluating the pre-dividend side.
 
 ### Step 2: Cash Dividend Handling
 
-Maintain **no-arbitrage** when handling cash dividends.
+At each ex-dividend date apply the backward jump
+$V(S,t_d^-)=V(\max(S-D,0),t_d^+)$ using linear interpolation, then take the maximum
+with the pre-dividend intrinsic value for American options. The nonnegative stock
+floor is the task's limited-liability cash-dividend approximation. Store sampled
+grids and exercise boundaries at dividend dates on the **post-dividend** side;
+apply the jump before stepping to the preceding time node.
 
 ### Step 3: Price Four Options
 
@@ -61,9 +74,10 @@ Also verify:
 ### Step 5: Early Exercise Boundary and Delta
 
 **Early exercise boundary** (American put with dividends): At each time step $n$, find the
-**largest** $S_i$ where $V(S_i) = \text{payoff}(S_i)$ (to within tolerance $10^{-6}$). This
+**largest in-the-money** $S_i<K$ where $V(S_i) = \text{payoff}(S_i)$ (to within tolerance $10^{-6}$), for $t<T$. This
 is the critical stock price $S^*(t)$ below which early exercise is optimal. Scan from
-high $S$ downward. Report $S^*(t_n)$ for all $n = 0, 1, \ldots, N_T$.
+high $S$ downward. Set the terminal convention $S^*(T)=K$. Report $S^*(t_n)$
+for all $n = 0, 1, \ldots, N_T$, on the post-dividend side at event dates.
 
 **Delta**: For all four options (with dividends), compute delta at $S = S_0 = 100$ using
 central finite differences from the grid.
@@ -75,8 +89,10 @@ $N_T = 300$. Compute the **Richardson extrapolation** estimate:
 
 $$P_{\text{rich}} = \frac{4 P_{\text{fine}} - P_{\text{coarse}}}{3}$$
 
-This is valid because Crank-Nicolson is second-order in both $\Delta S$ and $\Delta t$,
-and the grids are refined proportionally (halving both steps).
+Treat this as a **second-order extrapolation heuristic**, not a demonstrated order
+of convergence for the American free boundary and dividend interpolation. The
+reported ratio $|P_{coarse}-P_{rich}|/|P_{fine}-P_{rich}|$ equals four algebraically
+when the denominator is nonzero; it is not independent evidence of convergence.
 
 ### Step 7: Save Outputs
 

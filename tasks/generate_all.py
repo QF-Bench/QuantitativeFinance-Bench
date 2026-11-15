@@ -198,7 +198,7 @@ def solve_kelly(returns_data=None):
     for name, f in schemes.items():
         for p in range(n_paths):
             sim_returns = sim_rng.multivariate_normal(mu_hat, cov_hat, size=n_days)
-            port_returns = sim_returns @ f  # daily portfolio returns
+            port_returns = rf_daily + (sim_returns - rf_daily) @ f  # self-financing
             all_daily_returns[name].extend(port_returns.tolist())
 
             # Wealth path
@@ -215,13 +215,13 @@ def solve_kelly(returns_data=None):
             max_drawdowns[name][p] = np.max(dd)
 
     # ── Step 6: Metrics ──
-    # Median terminal wealth (index n_paths // 2 after sorting)
-    median_idx = n_paths // 2
+    # Conventional median averages the two central observations for even samples.
 
     results = {'num_valid_observations': num_valid_observations}
     for name in ['full', 'var']:
         sorted_tw = np.sort(terminal_wealth[name])
-        results[f'median_terminal_wealth_{name}'] = float(sorted_tw[median_idx])
+        results[f'median_terminal_wealth_{name}'] = float(np.median(sorted_tw))
+        results[f'mean_terminal_wealth_{name}'] = float(np.mean(sorted_tw))
 
         # Sharpe: pool all daily returns across all paths
         all_r = np.array(all_daily_returns[name])
@@ -230,7 +230,7 @@ def solve_kelly(returns_data=None):
 
         # p50 drawdown: median of max_drawdowns
         sorted_dd = np.sort(max_drawdowns[name])
-        results[f'p50_drawdown_{name}'] = float(sorted_dd[median_idx])
+        results[f'p50_drawdown_{name}'] = float(np.median(sorted_dd))
 
     # Mean terminal wealth (for checkpoint)
     mean_tw_full = float(np.mean(terminal_wealth['full']))
@@ -271,8 +271,8 @@ def solve_kelly(returns_data=None):
     # Re-run simulation with compound rf Kelly fractions
     sim_rng2 = np.random.default_rng(seed)
     alt_results_rf = _run_mc_schemes(
-        {'full': f_star_c, 'var': f_var_c},
-        mu_hat, cov_hat, initial_capital, n_paths, n_days, sim_rng2
+        {'full': f_star_c, 'half': f_star_c/2, 'var': f_var_c, 'equal': f_equal},
+        mu_hat, cov_hat, initial_capital, n_paths, n_days, sim_rng2, rf_daily_compound
     )
     alt_results_rf['num_valid_observations'] = num_valid_observations
 
@@ -280,7 +280,7 @@ def solve_kelly(returns_data=None):
     # Same fractions as primary, but Sharpe = (mean - rf_daily) / std * sqrt(252)
     sim_rng3 = np.random.default_rng(seed)
     alt_results_sharpe = _run_mc_schemes_sharpe_excess(
-        {'full': f_star, 'var': f_var},
+        schemes,
         mu_hat, cov_hat, initial_capital, n_paths, n_days, sim_rng3, rf_daily
     )
     alt_results_sharpe['num_valid_observations'] = num_valid_observations
@@ -297,15 +297,25 @@ def solve_kelly(returns_data=None):
         'p50_drawdown_var': -results['p50_drawdown_var'],
     }
 
+    # Path-specific checkpoints must use that path's allocation and funding.
+    rf_checkpoints = dict(checkpoints_values)
+    for i in range(3):
+        rf_checkpoints[f'mean_excess_{i}'] = float(mu_excess_compound[i])
+        rf_checkpoints[f'kelly_fraction_{i}'] = float(f_star_c[i])
+    rf_checkpoints.update(
+        total_kelly_leverage=float(np.sum(np.abs(f_star_c))),
+        portfolio_var_full=float(var_full_c), var_scale_factor=float(kappa_c),
+        mean_terminal_wealth_full=alt_results_rf['mean_terminal_wealth_full'],
+    )
     # ── Write reference data ──
     _write_kelly_refs(ref_dir, results, checkpoints_values, alt_results_rf,
-                      alt_results_sharpe, alt_results_dd_neg)
+                      alt_results_sharpe, alt_results_dd_neg, rf_checkpoints)
 
     print(f"  -> Wrote reference data to {ref_dir}")
 
 
 def _run_mc_schemes(schemes_dict, mu_hat, cov_hat, initial_capital,
-                    n_paths, n_days, rng):
+                    n_paths, n_days, rng, rf_daily):
     """Run MC for a dict of {name: fractions}, return deliverable values."""
     terminal_wealth = {name: np.zeros(n_paths) for name in schemes_dict}
     all_daily_returns = {name: [] for name in schemes_dict}
@@ -314,7 +324,7 @@ def _run_mc_schemes(schemes_dict, mu_hat, cov_hat, initial_capital,
     for name, f in schemes_dict.items():
         for p in range(n_paths):
             sim_returns = rng.multivariate_normal(mu_hat, cov_hat, size=n_days)
-            port_returns = sim_returns @ f
+            port_returns = rf_daily + (sim_returns - rf_daily) @ f
             all_daily_returns[name].extend(port_returns.tolist())
 
             wealth = np.empty(n_days + 1)
@@ -327,18 +337,18 @@ def _run_mc_schemes(schemes_dict, mu_hat, cov_hat, initial_capital,
             dd = (running_max - wealth) / running_max
             max_drawdowns[name][p] = np.max(dd)
 
-    median_idx = n_paths // 2
     results = {}
     for name in schemes_dict:
         sorted_tw = np.sort(terminal_wealth[name])
-        results[f'median_terminal_wealth_{name}'] = float(sorted_tw[median_idx])
+        results[f'median_terminal_wealth_{name}'] = float(np.median(sorted_tw))
+        results[f'mean_terminal_wealth_{name}'] = float(np.mean(sorted_tw))
 
         all_r = np.array(all_daily_returns[name])
         sharpe = float(np.mean(all_r) / np.std(all_r, ddof=1) * math.sqrt(252))
         results[f'sharpe_{name}'] = sharpe
 
         sorted_dd = np.sort(max_drawdowns[name])
-        results[f'p50_drawdown_{name}'] = float(sorted_dd[median_idx])
+        results[f'p50_drawdown_{name}'] = float(np.median(sorted_dd))
 
     return results
 
@@ -353,7 +363,7 @@ def _run_mc_schemes_sharpe_excess(schemes_dict, mu_hat, cov_hat, initial_capital
     for name, f in schemes_dict.items():
         for p in range(n_paths):
             sim_returns = rng.multivariate_normal(mu_hat, cov_hat, size=n_days)
-            port_returns = sim_returns @ f
+            port_returns = rf_daily + (sim_returns - rf_daily) @ f
             all_daily_returns[name].extend(port_returns.tolist())
 
             wealth = np.empty(n_days + 1)
@@ -366,11 +376,11 @@ def _run_mc_schemes_sharpe_excess(schemes_dict, mu_hat, cov_hat, initial_capital
             dd = (running_max - wealth) / running_max
             max_drawdowns[name][p] = np.max(dd)
 
-    median_idx = n_paths // 2
     results = {}
     for name in schemes_dict:
         sorted_tw = np.sort(terminal_wealth[name])
-        results[f'median_terminal_wealth_{name}'] = float(sorted_tw[median_idx])
+        results[f'median_terminal_wealth_{name}'] = float(np.median(sorted_tw))
+        results[f'mean_terminal_wealth_{name}'] = float(np.mean(sorted_tw))
 
         all_r = np.array(all_daily_returns[name])
         # EXCESS Sharpe
@@ -378,13 +388,13 @@ def _run_mc_schemes_sharpe_excess(schemes_dict, mu_hat, cov_hat, initial_capital
         results[f'sharpe_{name}'] = sharpe
 
         sorted_dd = np.sort(max_drawdowns[name])
-        results[f'p50_drawdown_{name}'] = float(sorted_dd[median_idx])
+        results[f'p50_drawdown_{name}'] = float(np.median(sorted_dd))
 
     return results
 
 
 def _write_kelly_refs(ref_dir, primary_results, checkpoints_values,
-                      alt_rf, alt_sharpe, alt_dd_neg):
+                      alt_rf, alt_sharpe, alt_dd_neg, rf_checkpoints):
     """Write all reference JSON files for kelly-var-sizing."""
 
     # ── checkpoints.json ──
@@ -422,8 +432,14 @@ def _write_kelly_refs(ref_dir, primary_results, checkpoints_values,
         # Copy all updated checkpoints into each path
         import copy
         path['checkpoints'] = copy.deepcopy(updated_checkpoints)
+        if path['name'] == 'rf_compound':
+            for key, val in rf_checkpoints.items():
+                path['checkpoints'][key]['value'] = val
 
     _write_json(os.path.join(ref_dir, 'alt_paths.json'), alt_data)
+    solution_dir = os.path.join(os.path.dirname(os.path.dirname(ref_dir)), 'solution')
+    _write_json(os.path.join(solution_dir, 'expected.json'), exp_data)
+    _write_json(os.path.join(solution_dir, 'checkpoints.json'), cp_data)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1052,9 +1068,7 @@ def solve_sentiment(prices_data=None, dates=None, tickers=None,
 
     # ── Data cleaning: filter posts with negative engagement values ──
     num_posts_raw = len(posts)
-    posts = [p for p in posts if p.get('likes', 0) >= 0
-             and p.get('retweets', 0) >= 0
-             and p.get('replies', 0) >= 0]
+    posts = [p for p in posts if p.get('likes', 0) >= 0]
     num_valid_posts = len(posts)
 
     N_DAYS = len(dates)
@@ -1081,9 +1095,6 @@ def solve_sentiment(prices_data=None, dates=None, tickers=None,
         date_str = post['timestamp'][:10]
         ticker = post['ticker']
         text = post['text']
-
-        if date_str not in daily_scores or ticker not in ticker_to_idx:
-            continue
 
         # Lowercase, split on whitespace, strip non-alpha
         tokens = text.lower().split()
@@ -1112,6 +1123,9 @@ def solve_sentiment(prices_data=None, dates=None, tickers=None,
             num_scored_nonzero += 1
             weighted_scores.append(score)
 
+        # Per-post statistics precede the trading-calendar aggregation filter.
+        if date_str not in daily_scores or ticker not in ticker_to_idx:
+            continue
         daily_scores[date_str][ticker] += score
         daily_post_counts[date_str][ticker] += 1
 
@@ -1226,7 +1240,7 @@ def solve_sentiment(prices_data=None, dates=None, tickers=None,
     sharpe = ann_return / ann_vol if ann_vol > 0 else 0.0
 
     # Drawdown
-    cum_wealth = np.cumprod(1 + portfolio_returns)
+    cum_wealth = np.r_[1.0, np.cumprod(1 + portfolio_returns)]
     running_max = np.maximum.accumulate(cum_wealth)
     dd = (running_max - cum_wealth) / running_max
     max_dd = float(np.max(dd))
@@ -1350,7 +1364,7 @@ def solve_sentiment(prices_data=None, dates=None, tickers=None,
     log_ann_return = float(np.mean(log_port_returns) * 252)
     log_ann_vol = float(np.std(log_port_returns, ddof=1) * math.sqrt(252))
     log_sharpe = log_ann_return / log_ann_vol if log_ann_vol > 0 else 0.0
-    log_cum_wealth = np.cumprod(1 + log_port_returns)
+    log_cum_wealth = np.r_[1.0, np.cumprod(1 + log_port_returns)]
     log_running_max = np.maximum.accumulate(log_cum_wealth)
     log_dd = (log_running_max - log_cum_wealth) / log_running_max
     log_max_dd = float(np.max(log_dd))
@@ -1509,12 +1523,19 @@ def _write_sentiment_refs(ref_dir, primary_results, checkpoints_values, alt_maps
             d['value'] = result_map[d['name']]
         # Start with all updated checkpoints, then apply path-specific overrides
         path['checkpoints'] = copy.deepcopy(updated_checkpoints)
+        if path['name'] == 'ic_ir_ddof0':
+            n_ic = checkpoints_values['num_ic_observations']
+            path['checkpoints']['std_ic']['value'] = checkpoints_values['std_ic'] * math.sqrt((n_ic - 1) / n_ic)
+            path['checkpoints']['ic_ir']['value'] = result_map['ic_ir']
         # Update return-dependent checkpoints for log_returns path
         if path['name'] == 'log_returns' and log_checkpoints_overrides:
             for key, val in log_checkpoints_overrides.items():
                 if key in path['checkpoints']:
                     path['checkpoints'][key]['value'] = val
     _write_json(os.path.join(ref_dir, 'alt_paths.json'), alt_data)
+    solution_dir = os.path.join(os.path.dirname(os.path.dirname(ref_dir)), 'solution')
+    _write_json(os.path.join(solution_dir, 'expected.json'), exp_data)
+    _write_json(os.path.join(solution_dir, 'checkpoints.json'), cp_data)
 
 
 # ═══════════════════════════════════════════════════════════════════

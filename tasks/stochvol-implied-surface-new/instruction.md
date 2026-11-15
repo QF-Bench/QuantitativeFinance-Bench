@@ -65,9 +65,10 @@ following methods:
 
 **Compare the two methods** by pricing options at the shortest maturity ($T = 1/12$) across all
 12 strikes. Compute the absolute price difference between the two methods at each strike.
-**Choose the method where all price differences are below $10^{-5}$**, or if neither satisfies
-this, choose the method with the smaller maximum absolute difference. Use the chosen method
-for all subsequent computations.
+**Choose `scipy_quad` if the maximum pairwise absolute price difference is strictly
+below $10^{-5}$; otherwise choose `gauss_legendre`.** The latter uses the wider
+integration interval and is the prescribed fallback for this task. Use the chosen
+method for all subsequent computations.
 
 Save the comparison results to `/app/output/integration_comparison.csv` with columns:
 `K`, `T`, `price_quad`, `price_gl`, `abs_diff`. The file should have exactly 12 data rows

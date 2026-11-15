@@ -16,7 +16,7 @@
         },
         {
           "name": "median_terminal_wealth_full",
-          "value": 1120532.6156310705,
+          "value": 1135416.2786237118,
           "path": "results.json:median_terminal_wealth_full",
           "tolerance": {
             "rtol": 0.05,
@@ -25,7 +25,7 @@
         },
         {
           "name": "median_terminal_wealth_var",
-          "value": 1081437.7246654786,
+          "value": 1110600.0626869001,
           "path": "results.json:median_terminal_wealth_var",
           "tolerance": {
             "rtol": 0.05,
@@ -34,7 +34,7 @@
         },
         {
           "name": "sharpe_full",
-          "value": 0.48233523943596884,
+          "value": 0.5146198966858644,
           "path": "results.json:sharpe_full",
           "tolerance": {
             "rtol": 0.05,
@@ -43,7 +43,7 @@
         },
         {
           "name": "sharpe_var",
-          "value": 0.46125403016881034,
+          "value": 0.5914102473423168,
           "path": "results.json:sharpe_var",
           "tolerance": {
             "rtol": 0.05,
@@ -52,7 +52,7 @@
         },
         {
           "name": "p50_drawdown_full",
-          "value": 0.33189818974276614,
+          "value": 0.3291675751123119,
           "path": "results.json:p50_drawdown_full",
           "tolerance": {
             "rtol": 0.05,
@@ -61,7 +61,7 @@
         },
         {
           "name": "p50_drawdown_var",
-          "value": 0.17702645071353354,
+          "value": 0.17024519608361177,
           "path": "results.json:p50_drawdown_var",
           "tolerance": {
             "rtol": 0.05,
@@ -185,7 +185,7 @@
           "siblings": {}
         },
         "mean_terminal_wealth_full": {
-          "value": 1220051.4531033468,
+          "value": 1236309.5449067529,
           "concept": "mc.simulation",
           "domain": "SIM",
           "tolerance": {
@@ -211,7 +211,7 @@
         },
         {
           "name": "median_terminal_wealth_full",
-          "value": 1121968.5450205465,
+          "value": 1134967.6439070308,
           "path": "results.json:median_terminal_wealth_full",
           "tolerance": {
             "rtol": 0.05,
@@ -220,7 +220,7 @@
         },
         {
           "name": "median_terminal_wealth_var",
-          "value": 1073578.1259974462,
+          "value": 1109542.9805134414,
           "path": "results.json:median_terminal_wealth_var",
           "tolerance": {
             "rtol": 0.05,
@@ -229,7 +229,7 @@
         },
         {
           "name": "sharpe_full",
-          "value": 0.48573943875600706,
+          "value": 0.5138871118805107,
           "path": "results.json:sharpe_full",
           "tolerance": {
             "rtol": 0.05,
@@ -238,7 +238,7 @@
         },
         {
           "name": "sharpe_var",
-          "value": 0.4660293780431596,
+          "value": 0.5888026506358351,
           "path": "results.json:sharpe_var",
           "tolerance": {
             "rtol": 0.05,
@@ -247,7 +247,7 @@
         },
         {
           "name": "p50_drawdown_full",
-          "value": 0.3326833240426724,
+          "value": 0.3302088080175839,
           "path": "results.json:p50_drawdown_full",
           "tolerance": {
             "rtol": 0.05,
@@ -256,7 +256,7 @@
         },
         {
           "name": "p50_drawdown_var",
-          "value": 0.17657812716768817,
+          "value": 0.1702364795212153,
           "path": "results.json:p50_drawdown_var",
           "tolerance": {
             "rtol": 0.05,
@@ -266,7 +266,7 @@
       ],
       "checkpoints": {
         "mean_excess_0": {
-          "value": -5.087804440843522e-05,
+          "value": -4.779774846953929e-05,
           "concept": "stats.descriptive",
           "domain": "STAT",
           "tolerance": {
@@ -276,7 +276,7 @@
           "siblings": {}
         },
         "mean_excess_1": {
-          "value": 0.00037467483119636236,
+          "value": 0.0003777551271352583,
           "concept": "stats.descriptive",
           "domain": "STAT",
           "tolerance": {
@@ -286,7 +286,7 @@
           "siblings": {}
         },
         "mean_excess_2": {
-          "value": 0.000790256904882688,
+          "value": 0.0007933372008215839,
           "concept": "stats.descriptive",
           "domain": "STAT",
           "tolerance": {
@@ -323,7 +323,7 @@
           "siblings": {}
         },
         "kelly_fraction_0": {
-          "value": -0.6378984079306312,
+          "value": -0.610532362033406,
           "concept": "pm.kelly_criterion",
           "domain": "CQF",
           "tolerance": {
@@ -332,7 +332,7 @@
           "siblings": {}
         },
         "kelly_fraction_1": {
-          "value": 0.9555905514480837,
+          "value": 0.9633094243473438,
           "concept": "pm.kelly_criterion",
           "domain": "CQF",
           "tolerance": {
@@ -341,7 +341,7 @@
           "siblings": {}
         },
         "kelly_fraction_2": {
-          "value": 0.3510930133296439,
+          "value": 0.35180204819799343,
           "concept": "pm.kelly_criterion",
           "domain": "CQF",
           "tolerance": {
@@ -350,7 +350,7 @@
           "siblings": {}
         },
         "total_kelly_leverage": {
-          "value": 1.9445819727083589,
+          "value": 1.925643834578743,
           "concept": "pm.kelly_criterion",
           "domain": "CQF",
           "tolerance": {
@@ -360,7 +360,7 @@
           "siblings": {}
         },
         "portfolio_var_full": {
-          "value": 0.060123578915744026,
+          "value": 0.06031367215391281,
           "concept": "risk.var",
           "domain": "RISK",
           "tolerance": {
@@ -370,7 +370,7 @@
           "siblings": {}
         },
         "var_scale_factor": {
-          "value": 0.4989722924186099,
+          "value": 0.4973996596235066,
           "concept": "risk.var",
           "domain": "RISK",
           "tolerance": {
@@ -380,7 +380,7 @@
           "siblings": {}
         },
         "mean_terminal_wealth_full": {
-          "value": 1220051.4531033468,
+          "value": 1236781.615013739,
           "concept": "mc.simulation",
           "domain": "SIM",
           "tolerance": {
@@ -406,7 +406,7 @@
         },
         {
           "name": "median_terminal_wealth_full",
-          "value": 1120532.6156310705,
+          "value": 1135416.2786237118,
           "path": "results.json:median_terminal_wealth_full",
           "tolerance": {
             "rtol": 0.05,
@@ -415,7 +415,7 @@
         },
         {
           "name": "median_terminal_wealth_var",
-          "value": 1072823.4441667893,
+          "value": 1110600.0626869001,
           "path": "results.json:median_terminal_wealth_var",
           "tolerance": {
             "rtol": 0.05,
@@ -424,7 +424,7 @@
         },
         {
           "name": "sharpe_full",
-          "value": 0.38486177797339755,
+          "value": 0.4171464352232931,
           "path": "results.json:sharpe_full",
           "tolerance": {
             "rtol": 0.05,
@@ -433,7 +433,7 @@
         },
         {
           "name": "sharpe_var",
-          "value": 0.26733201718946076,
+          "value": 0.3960669406703277,
           "path": "results.json:sharpe_var",
           "tolerance": {
             "rtol": 0.05,
@@ -442,7 +442,7 @@
         },
         {
           "name": "p50_drawdown_full",
-          "value": 0.33189818974276614,
+          "value": 0.3291675751123119,
           "path": "results.json:p50_drawdown_full",
           "tolerance": {
             "rtol": 0.05,
@@ -451,7 +451,7 @@
         },
         {
           "name": "p50_drawdown_var",
-          "value": 0.17675361854111296,
+          "value": 0.17024519608361177,
           "path": "results.json:p50_drawdown_var",
           "tolerance": {
             "rtol": 0.05,
@@ -575,7 +575,7 @@
           "siblings": {}
         },
         "mean_terminal_wealth_full": {
-          "value": 1220051.4531033468,
+          "value": 1236309.5449067529,
           "concept": "mc.simulation",
           "domain": "SIM",
           "tolerance": {
@@ -601,7 +601,7 @@
         },
         {
           "name": "median_terminal_wealth_full",
-          "value": 1120532.6156310705,
+          "value": 1135416.2786237118,
           "path": "results.json:median_terminal_wealth_full",
           "tolerance": {
             "rtol": 0.05,
@@ -610,7 +610,7 @@
         },
         {
           "name": "median_terminal_wealth_var",
-          "value": 1081437.7246654786,
+          "value": 1110600.0626869001,
           "path": "results.json:median_terminal_wealth_var",
           "tolerance": {
             "rtol": 0.05,
@@ -619,7 +619,7 @@
         },
         {
           "name": "sharpe_full",
-          "value": 0.48233523943596884,
+          "value": 0.5146198966858644,
           "path": "results.json:sharpe_full",
           "tolerance": {
             "rtol": 0.05,
@@ -628,7 +628,7 @@
         },
         {
           "name": "sharpe_var",
-          "value": 0.46125403016881034,
+          "value": 0.5914102473423168,
           "path": "results.json:sharpe_var",
           "tolerance": {
             "rtol": 0.05,
@@ -637,7 +637,7 @@
         },
         {
           "name": "p50_drawdown_full",
-          "value": -0.33189818974276614,
+          "value": -0.3291675751123119,
           "path": "results.json:p50_drawdown_full",
           "tolerance": {
             "rtol": 0.05,
@@ -646,7 +646,7 @@
         },
         {
           "name": "p50_drawdown_var",
-          "value": -0.17702645071353354,
+          "value": -0.17024519608361177,
           "path": "results.json:p50_drawdown_var",
           "tolerance": {
             "rtol": 0.05,
@@ -770,7 +770,7 @@
           "siblings": {}
         },
         "mean_terminal_wealth_full": {
-          "value": 1220051.4531033468,
+          "value": 1236309.5449067529,
           "concept": "mc.simulation",
           "domain": "SIM",
           "tolerance": {

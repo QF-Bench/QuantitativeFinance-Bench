@@ -32,9 +32,12 @@ class YieldCurve:
 
     def discount(self, T):
         """Interpolate discount factor at arbitrary T using linear interp in log-space."""
-        return np.exp(np.interp(T, self.T, self.logP))
+        return np.exp(self.log_discount(T))
 
     def log_discount(self, T):
+        # Continue the final log-discount slope beyond the last input knot.
+        if T > self.T[-1]:
+            return self.logP[-1] + (T - self.T[-1]) * (self.logP[-1] - self.logP[-2]) / (self.T[-1] - self.T[-2])
         return np.interp(T, self.T, self.logP)
 
     def zero_rate(self, T):
@@ -43,12 +46,9 @@ class YieldCurve:
         return -self.log_discount(T) / T
 
     def forward_rate(self, t):
-        """Instantaneous forward rate f(0, t) via numerical derivative."""
-        eps = 1e-6
-        if t + eps <= self.T[-1]:
-            return -(self.log_discount(t + eps) - self.log_discount(t)) / eps
-        else:
-            return -(self.log_discount(t) - self.log_discount(t - eps)) / eps
+        """Right-hand forward at knots, with final-slope extrapolation."""
+        i = min(max(np.searchsorted(self.T, t, side="right") - 1, 0), len(self.T) - 2)
+        return -(self.logP[i + 1] - self.logP[i]) / (self.T[i + 1] - self.T[i])
 
     def forward_rate_interval(self, T1, T2):
         """Forward rate between T1 and T2."""
@@ -129,11 +129,14 @@ def calibrate(yc, caplet_data):
         for i, T2 in enumerate(T2_list):
             T1 = T2 - freq
             model_price = hw_caplet(a, sigma, T1, T2, Kc, yc)
-            sse += (model_price - mkt_prices[i]) ** 2
+            sse += ((model_price - mkt_prices[i]) * 10000.0) ** 2
         return sse
 
     result = minimize(objective, x0=[0.10, 0.015], method="L-BFGS-B",
-                      bounds=[(0.001, 1.0), (0.001, 0.10)])
+                      bounds=[(0.001, 1.0), (0.001, 0.10)],
+                      options={"ftol": 1e-14, "gtol": 1e-8, "maxiter": 1000, "maxls": 50})
+    if not result.success:
+        raise RuntimeError(f"Caplet calibration did not converge: {result.message}")
     a_cal, sigma_cal = result.x
 
     # Compute RMSE
@@ -206,6 +209,15 @@ class TrinomialTree:
         self.dx = sigma * np.sqrt(3.0 * self.dt)
         self.j_max = max(int(np.ceil(0.184 / (a * self.dt))), 1)
 
+        # Validate transition moments once; no signed state prices are allowed.
+        for j in range(-self.j_max, self.j_max + 1):
+            probs, targets = self._get_probs(j)
+            weights, moves = np.array(probs), np.array(targets) - j
+            eta = self.a * j * self.dt
+            assert np.all(weights >= 0) and abs(weights.sum() - 1) < 1e-12
+            assert abs(weights @ moves + eta) < 1e-12
+            assert abs(weights @ (moves + eta)**2 - 1/3) < 1e-12
+
         # Build the tree
         self.alpha = np.zeros(self.n_steps)  # drift shifts
         self._build()
@@ -220,15 +232,15 @@ class TrinomialTree:
             targets = (j + 1, j, j - 1)
         elif j == self.j_max:
             # Upper boundary: targets j, j-1, j-2
-            pu = 7.0 / 6.0 + (eta**2 + 3 * eta) / 2.0
-            pm = -1.0 / 3.0 - eta**2 - 2 * eta
-            pd = 1.0 / 6.0 + (eta**2 + eta) / 2.0
+            pu = 7.0 / 6.0 + (eta**2 - 3 * eta) / 2.0
+            pm = -1.0 / 3.0 - eta**2 + 2 * eta
+            pd = 1.0 / 6.0 + (eta**2 - eta) / 2.0
             targets = (j, j - 1, j - 2)
         elif j == -self.j_max:
             # Lower boundary: targets j+2, j+1, j
-            pu = 1.0 / 6.0 + (eta**2 - eta) / 2.0
-            pm = -1.0 / 3.0 - eta**2 + 2 * eta
-            pd = 7.0 / 6.0 + (eta**2 - 3 * eta) / 2.0
+            pu = 1.0 / 6.0 + (eta**2 + eta) / 2.0
+            pm = -1.0 / 3.0 - eta**2 - 2 * eta
+            pd = 7.0 / 6.0 + (eta**2 + 3 * eta) / 2.0
             targets = (j + 2, j + 1, j)
         else:
             # Should not happen with proper j_max
@@ -274,6 +286,7 @@ class TrinomialTree:
                     contrib = qval * disc * prob
                     Q_new[target_j] = Q_new.get(target_j, 0.0) + contrib
 
+            assert all(q >= 0 and np.isfinite(q) for q in Q_new.values())
             Q = Q_new
             self.Q_history.append(Q.copy())
 
@@ -724,12 +737,12 @@ def main():
 
     # 7. summary.json
     tree_vs_jam_ok = all(
-        abs(tree_prices[sw["description"]] - analytical_prices[sw["description"]]) * 10000 < 5.0
+        abs(tree_prices[sw["description"]] - analytical_prices[sw["description"]]) * 10000 < 3.0
         for sw in swaptions
     )
     dv01_positive = all(dv01_results[sw["description"]] > 0 for sw in swaptions)
     bermudan_geq_eu = all(
-        bermudan_results[sw["description"]]["bermudan_bps"] >= bermudan_results[sw["description"]]["european_tree_bps"] - 0.01
+        bermudan_results[sw["description"]]["bermudan_bps"] >= bermudan_results[sw["description"]]["european_tree_bps"] - 1e-6
         for sw in swaptions
     )
     bermudan_premium_pos = all(
@@ -740,7 +753,7 @@ def main():
 
     summary = {
         "calibration_rmse_bps": round(float(rmse_bps), 4),
-        "calibration_rmse_ok": bool(rmse_bps < 5.0),
+        "calibration_rmse_ok": bool(rmse_bps < 0.01),
         "params_in_range": bool(params_ok),
         "a": round(float(a_cal), 8),
         "sigma": round(float(sigma_cal), 8),
@@ -750,7 +763,7 @@ def main():
         "bermudan_geq_european": bool(bermudan_geq_eu),
         "bermudan_premium_positive": bool(bermudan_premium_pos),
         "all_checks_passed": bool(all([
-            rmse_bps < 5.0, params_ok, tree_zcb_ok,
+            rmse_bps < 0.01, params_ok, tree_zcb_ok,
             tree_vs_jam_ok, dv01_positive, bermudan_geq_eu, bermudan_premium_pos
         ]))
     }

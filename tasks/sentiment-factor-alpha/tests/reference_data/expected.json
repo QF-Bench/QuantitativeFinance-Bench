@@ -21,7 +21,7 @@
     },
     {
       "name": "mean_weighted_score",
-      "value": 0.052656515576786134,
+      "value": 0.0554764824304027,
       "path": "results.json:mean_weighted_score",
       "tolerance": {
         "rtol": 0.05,
@@ -39,7 +39,7 @@
     },
     {
       "name": "annualized_return",
-      "value": -0.11547220620611719,
+      "value": -0.11547220620611716,
       "path": "results.json:annualized_return",
       "tolerance": {
         "rtol": 0.02,
@@ -48,7 +48,7 @@
     },
     {
       "name": "sharpe_ratio",
-      "value": -1.1401458219432552,
+      "value": -1.140145821943255,
       "path": "results.json:sharpe_ratio",
       "tolerance": {
         "rtol": 0.05,
@@ -57,7 +57,7 @@
     },
     {
       "name": "max_drawdown",
-      "value": 0.20902592271707085,
+      "value": 0.21207690662970524,
       "path": "results.json:max_drawdown",
       "tolerance": {
         "rtol": 0.02,
@@ -84,7 +84,7 @@
     },
     {
       "name": "alpha_annualized",
-      "value": -0.11249049108672321,
+      "value": -0.11249049108672318,
       "path": "results.json:alpha_annualized",
       "tolerance": {
         "rtol": 0.05,
@@ -93,7 +93,7 @@
     },
     {
       "name": "beta",
-      "value": -0.01459378028020172,
+      "value": -0.01459378028020173,
       "path": "results.json:beta",
       "tolerance": {
         "rtol": 0.05,

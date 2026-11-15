@@ -582,6 +582,68 @@ def write_outputs(
 # Main entry point
 # ══════════════════════════════════════════════════════════════════════
 
+def validate_invariants(agent_outputs: dict, cc: dict, checks: dict,
+                        path_name: str = "primary") -> None:
+    """Enforce mathematical domains as well as tolerant numerical targets.
+
+    Read the values already resolved by the verifier, preserving its flat,
+    wrapped and value-matched checkpoint representations.
+    """
+    reported = {}
+    for item in cc.get("deliverables", []):
+        if item.get("actual") is not None:
+            reported.setdefault(item["name"], []).append(item["actual"])
+    for item in checks.get("results", []):
+        if item.get("actual") is not None:
+            name = item.get("matched_as", item["term"])
+            reported.setdefault(name, []).append(item["actual"])
+
+    errors = {}
+
+    def finite(value):
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+    def reject(names, message):
+        for name in names:
+            errors[name] = message
+
+    def value(name):
+        values = reported.get(name, [])
+        return values[0] if values and all(finite(v) for v in values) else None
+
+    def close(a, b, rtol=1e-5, atol=1e-8):
+        return math.isclose(a, b, rel_tol=rtol, abs_tol=atol)
+
+    for name, values in reported.items():
+        if any(not finite(v) for v in values):
+            reject([name], "Reported metrics must be finite numbers.")
+    for rsq in reported.get("r_squared", []):
+        # Only machine-scale excursions are allowed for OLS with an intercept.
+        if not finite(rsq) or not -1e-12 <= rsq <= 1 + 1e-12:
+            reject(["r_squared"], "OLS R-squared must lie in [0, 1].")
+    daily = value("alpha_daily")
+    annual = value("alpha_annualized")
+    if daily is not None and annual is not None:
+        target = (1 + daily) ** 252 - 1 if path_name == "alpha_compound" else 252 * daily
+        if not close(annual, target):
+            reject(["alpha_daily", "alpha_annualized"], "Annualized alpha must agree with daily alpha and the selected convention.")
+    if not errors:
+        return
+    cc["invariant_errors"] = errors
+    cc["status"] = "FAIL"
+    for item in cc.get("deliverables", []):
+        if item["name"] in errors:
+            item["status"] = "FAIL"
+            item["invariant_error"] = errors[item["name"]]
+    for item in checks.get("results", []):
+        name = item.get("matched_as", item["term"])
+        if name in errors:
+            item["status"] = "INCORRECT"
+            item["error_class"] = "domain_or_identity"
+            item["invariant_error"] = errors[name]
+    checks["correct"] = sum(item["status"] == "CORRECT" for item in checks.get("results", []))
+
+
 def _score_path(cc: dict, checks: dict) -> int:
     """Score a verification result for path ranking.
 
@@ -640,6 +702,7 @@ def run_verification(
 
             path_cc = check_cc(agent_outputs, path_expected)
             path_checks = check_intermediates(solution, path_ref, agent_outputs)
+            validate_invariants(agent_outputs, path_cc, path_checks, path_entry.get("name", "primary"))
             score = _score_path(path_cc, path_checks)
 
             if score > best_score:
@@ -655,6 +718,7 @@ def run_verification(
         cc = check_cc(agent_outputs, ref["expected"])
         checks = check_intermediates(solution, ref, agent_outputs)
         matched_path_name = None
+        validate_invariants(agent_outputs, cc, checks)
 
     # Phase D: Classify
     classification = classify(cc, checks)

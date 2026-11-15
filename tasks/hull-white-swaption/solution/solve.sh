@@ -82,16 +82,16 @@ def B_hw(a, t, T):
         return T - t
     return (1.0 - np.exp(-a * (T - t))) / a
 
-def lnA_hw(a, sigma, t, T):
+def lnA_hw(a, sigma, t, T, curve=logP_interp):
     Bval = B_hw(a, t, T)
-    lnPT = logP_interp(T)
-    lnPt = logP_interp(t)
-    ft = f_market(t)
+    lnPT = curve(T)
+    lnPt = curve(t)
+    ft = -(curve(t + 1e-6) - curve(t)) / 1e-6
     return lnPT - lnPt + Bval * ft - (sigma**2 / (4.0 * a)) * Bval**2 * (1.0 - np.exp(-2.0 * a * t))
 
-def P_hw(a, sigma, t, T, r_t):
+def P_hw(a, sigma, t, T, r_t, curve=logP_interp):
     Bval = B_hw(a, t, T)
-    Aval = np.exp(lnA_hw(a, sigma, t, T))
+    Aval = np.exp(lnA_hw(a, sigma, t, T, curve))
     return Aval * np.exp(-Bval * r_t)
 
 # ============================================================
@@ -123,10 +123,13 @@ def calibration_objective(params):
         return 1e10
     model = np.array([hw_caplet_price(a, sigma, T1, T2, caplet_strike)
                        for T1, T2 in zip(caplet_T1, caplet_T2)])
-    return np.sum((model - market_caplet_prices)**2)
+    return np.sum(((model - market_caplet_prices) * 10000.0)**2)
 
 result = minimize(calibration_objective, x0=[0.10, 0.015],
-                  method='L-BFGS-B', bounds=[(0.001, 1.0), (0.001, 0.10)])
+                  method='L-BFGS-B', bounds=[(0.001, 1.0), (0.001, 0.10)],
+                  options={'ftol': 1e-14, 'gtol': 1e-8, 'maxiter': 1000, 'maxls': 50})
+if not result.success:
+    raise RuntimeError(f'Caplet calibration did not converge: {result.message}')
 a_cal, sigma_cal = result.x
 print(f"Calibrated: a={a_cal:.6f}, sigma={sigma_cal:.6f}")
 
@@ -222,14 +225,14 @@ def build_hw_tree(a, sigma, T_max, dt, logP_interp_func):
             eta2 = (a * j * dt)**2
 
             if j == j_max:
-                p_u = 7.0/6.0 + (eta2 + 3.0*eta) / 2.0
-                p_m = -1.0/3.0 - eta2 - 2.0*eta
-                p_d = 1.0/6.0 + (eta2 + eta) / 2.0
+                p_u = 7.0/6.0 + (eta2 - 3.0*eta) / 2.0
+                p_m = -1.0/3.0 - eta2 + 2.0*eta
+                p_d = 1.0/6.0 + (eta2 - eta) / 2.0
                 j_targets = (j, j-1, j-2)
             elif j == -j_max:
-                p_u = 1.0/6.0 + (eta2 - eta) / 2.0
-                p_m = -1.0/3.0 - eta2 + 2.0*eta
-                p_d = 7.0/6.0 + (eta2 - 3.0*eta) / 2.0
+                p_u = 1.0/6.0 + (eta2 + eta) / 2.0
+                p_m = -1.0/3.0 - eta2 - 2.0*eta
+                p_d = 7.0/6.0 + (eta2 + 3.0*eta) / 2.0
                 j_targets = (j+2, j+1, j)
             else:
                 p_u = 1.0/6.0 + (eta2 - eta) / 2.0
@@ -237,6 +240,11 @@ def build_hw_tree(a, sigma, T_max, dt, logP_interp_func):
                 p_d = 1.0/6.0 + (eta2 + eta) / 2.0
                 j_targets = (j+1, j, j-1)
 
+            weights = np.array([p_u, p_m, p_d])
+            moves = np.array(j_targets) - j
+            assert np.all(weights >= 0) and abs(weights.sum() - 1.0) < 1e-12
+            assert abs(weights @ moves + eta) < 1e-12
+            assert abs(weights @ (moves + eta)**2 - 1.0/3.0) < 1e-12
             prob_n[j] = (p_u, p_m, p_d, j_targets)
         probs.append(prob_n)
 
@@ -261,6 +269,7 @@ def build_hw_tree(a, sigma, T_max, dt, logP_interp_func):
             p_u, p_m, p_d, (j_u, j_m, j_d) = probs[n][j]
             for p, j_next in [(p_u, j_u), (p_m, j_m), (p_d, j_d)]:
                 Q_next[j_next] = Q_next.get(j_next, 0.0) + q_val * discount * p
+        assert all(q >= 0 and np.isfinite(q) for q in Q_next.values())
         Q.append(Q_next)
 
     # Last alpha
@@ -301,7 +310,7 @@ print("Tree diagnostics saved.")
 # ============================================================
 # Step 7: Price swaptions on the tree
 # ============================================================
-def price_swaption_tree(a, sigma, T0, swap_tenors, K_swap, n_steps, dt, dx, j_max, alpha, probs, Q):
+def price_swaption_tree(a, sigma, T0, swap_tenors, K_swap, n_steps, dt, dx, j_max, alpha, probs, Q, curve=logP_interp):
     n_expiry = int(round(T0 / dt))
     T_pay = [T0 + t for t in swap_tenors]
     n_pay = len(T_pay)
@@ -315,7 +324,7 @@ def price_swaption_tree(a, sigma, T0, swap_tenors, K_swap, n_steps, dt, dx, j_ma
             c_i = K_swap * deltas[i]
             if i == n_pay - 1:
                 c_i += 1.0
-            coupon_bond += c_i * P_hw(a, sigma, T0, T_pay[i], r_j)
+            coupon_bond += c_i * P_hw(a, sigma, T0, T_pay[i], r_j, curve)
         swaption_values[j] = max(1.0 - coupon_bond, 0.0)
 
     V = dict(swaption_values)
@@ -358,7 +367,7 @@ def compute_dv01(a, sigma, T0, swap_tenors, K_swap, bump_bps=1.0):
     n_s, dt_a, dx_a, j_m, alpha_b, probs_b, Q_b = build_hw_tree(
         a, sigma, T_tree_max, dt_tree, logP_bumped)
     price_bumped = price_swaption_tree(a, sigma, T0, swap_tenors, K_swap,
-                                        n_s, dt_a, dx_a, j_m, alpha_b, probs_b, Q_b)
+                                        n_s, dt_a, dx_a, j_m, alpha_b, probs_b, Q_b, logP_bumped)
     return price_bumped
 
 for desc, info in swaption_results.items():
@@ -536,21 +545,21 @@ for T in maturities:
     n_T = int(round(T / dt_actual))
     if n_T <= n_steps:
         tree_P = sum(Q[n_T].values())
-        if abs(tree_P - P(T)) > 1e-4:
+        if abs(tree_P - P(T)) >= 1e-6:
             tree_zcb_ok = False
 
-cal_ok = rmse < 5.0  # RMSE < 5 bps
-param_ok = 0.01 < a_cal < 0.5 and 0.005 < sigma_cal < 0.03
+cal_ok = rmse < 0.01  # Calibrated fit in bps (scaled objective)
+param_ok = 0.001 <= a_cal <= 1.0 and 0.001 <= sigma_cal <= 0.10
 
 tree_jam_ok = True
 for desc, info in swaption_results.items():
-    if info["tree_analytical_diff_bps"] > 3.0:
+    if info["tree_analytical_diff_bps"] >= 3.0:
         tree_jam_ok = False
 
 dv01_ok = all(info["dv01_bps_per_bp"] > 0 for info in swaption_results.values())
 
 bermudan_geq_european = all(
-    bermudan_results[d]["bermudan_bps"] >= bermudan_results[d]["european_tree_bps"] - 0.1
+    bermudan_results[d]["bermudan_bps"] >= bermudan_results[d]["european_tree_bps"] - 1e-6
     for d in bermudan_results
 )
 bermudan_premium_positive = all(

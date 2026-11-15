@@ -16,7 +16,7 @@
         },
         {
           "name": "mean_weighted_score",
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "path": "results.json:mean_weighted_score",
           "tolerance": {
             "rtol": 0.05,
@@ -34,7 +34,7 @@
         },
         {
           "name": "annualized_return",
-          "value": -0.11547220620611719,
+          "value": -0.11547220620611716,
           "path": "results.json:annualized_return",
           "tolerance": {
             "rtol": 0.02,
@@ -43,7 +43,7 @@
         },
         {
           "name": "sharpe_ratio",
-          "value": -1.1401458219432552,
+          "value": -1.140145821943255,
           "path": "results.json:sharpe_ratio",
           "tolerance": {
             "rtol": 0.05,
@@ -52,7 +52,7 @@
         },
         {
           "name": "max_drawdown",
-          "value": 0.20902592271707085,
+          "value": 0.21207690662970524,
           "path": "results.json:max_drawdown",
           "tolerance": {
             "rtol": 0.02,
@@ -79,7 +79,7 @@
         },
         {
           "name": "alpha_annualized",
-          "value": -0.11249049108672321,
+          "value": -0.11249049108672318,
           "path": "results.json:alpha_annualized",
           "tolerance": {
             "rtol": 0.05,
@@ -88,7 +88,7 @@
         },
         {
           "name": "beta",
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "path": "results.json:beta",
           "tolerance": {
             "rtol": 0.05,
@@ -125,7 +125,7 @@
           "siblings": {}
         },
         "num_scored_nonzero": {
-          "value": 17126,
+          "value": 17163,
           "concept": "nlp.sentiment_scoring",
           "domain": "NLP",
           "tolerance": {
@@ -135,7 +135,7 @@
           "siblings": {}
         },
         "mean_weighted_score": {
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "concept": "nlp.engagement_weighting",
           "domain": "NLP",
           "tolerance": {
@@ -213,7 +213,7 @@
           "siblings": {}
         },
         "alpha_daily": {
-          "value": -0.00044639083764572705,
+          "value": -0.00044639083764572694,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -223,7 +223,7 @@
           "siblings": {}
         },
         "beta": {
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -233,7 +233,7 @@
           "siblings": {}
         },
         "r_squared": {
-          "value": 0.0003409226348183322,
+          "value": 0.0003409226348183327,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -243,7 +243,7 @@
           "siblings": {}
         },
         "alpha_tstat": {
-          "value": -0.01258027886024492,
+          "value": -1.5522643526940212,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -269,7 +269,7 @@
         },
         {
           "name": "mean_weighted_score",
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "path": "results.json:mean_weighted_score",
           "tolerance": {
             "rtol": 0.05,
@@ -287,7 +287,7 @@
         },
         {
           "name": "annualized_return",
-          "value": -0.11547220620611719,
+          "value": -0.11547220620611716,
           "path": "results.json:annualized_return",
           "tolerance": {
             "rtol": 0.02,
@@ -296,7 +296,7 @@
         },
         {
           "name": "sharpe_ratio",
-          "value": -1.1401458219432552,
+          "value": -1.140145821943255,
           "path": "results.json:sharpe_ratio",
           "tolerance": {
             "rtol": 0.05,
@@ -305,7 +305,7 @@
         },
         {
           "name": "max_drawdown",
-          "value": -0.20902592271707085,
+          "value": -0.21207690662970524,
           "path": "results.json:max_drawdown",
           "tolerance": {
             "rtol": 0.02,
@@ -332,7 +332,7 @@
         },
         {
           "name": "alpha_annualized",
-          "value": -0.11249049108672321,
+          "value": -0.11249049108672318,
           "path": "results.json:alpha_annualized",
           "tolerance": {
             "rtol": 0.05,
@@ -341,7 +341,7 @@
         },
         {
           "name": "beta",
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "path": "results.json:beta",
           "tolerance": {
             "rtol": 0.05,
@@ -378,7 +378,7 @@
           "siblings": {}
         },
         "num_scored_nonzero": {
-          "value": 17126,
+          "value": 17163,
           "concept": "nlp.sentiment_scoring",
           "domain": "NLP",
           "tolerance": {
@@ -388,7 +388,7 @@
           "siblings": {}
         },
         "mean_weighted_score": {
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "concept": "nlp.engagement_weighting",
           "domain": "NLP",
           "tolerance": {
@@ -466,7 +466,7 @@
           "siblings": {}
         },
         "alpha_daily": {
-          "value": -0.00044639083764572705,
+          "value": -0.00044639083764572694,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -476,7 +476,7 @@
           "siblings": {}
         },
         "beta": {
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -486,7 +486,7 @@
           "siblings": {}
         },
         "r_squared": {
-          "value": 0.0003409226348183322,
+          "value": 0.0003409226348183327,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -496,7 +496,7 @@
           "siblings": {}
         },
         "alpha_tstat": {
-          "value": -0.01258027886024492,
+          "value": -1.5522643526940212,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -522,7 +522,7 @@
         },
         {
           "name": "mean_weighted_score",
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "path": "results.json:mean_weighted_score",
           "tolerance": {
             "rtol": 0.05,
@@ -540,7 +540,7 @@
         },
         {
           "name": "annualized_return",
-          "value": -0.11547220620611719,
+          "value": -0.11547220620611716,
           "path": "results.json:annualized_return",
           "tolerance": {
             "rtol": 0.02,
@@ -549,7 +549,7 @@
         },
         {
           "name": "sharpe_ratio",
-          "value": -1.1401458219432552,
+          "value": -1.140145821943255,
           "path": "results.json:sharpe_ratio",
           "tolerance": {
             "rtol": 0.05,
@@ -558,7 +558,7 @@
         },
         {
           "name": "max_drawdown",
-          "value": 0.20902592271707085,
+          "value": 0.21207690662970524,
           "path": "results.json:max_drawdown",
           "tolerance": {
             "rtol": 0.02,
@@ -594,7 +594,7 @@
         },
         {
           "name": "beta",
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "path": "results.json:beta",
           "tolerance": {
             "rtol": 0.05,
@@ -631,7 +631,7 @@
           "siblings": {}
         },
         "num_scored_nonzero": {
-          "value": 17126,
+          "value": 17163,
           "concept": "nlp.sentiment_scoring",
           "domain": "NLP",
           "tolerance": {
@@ -641,7 +641,7 @@
           "siblings": {}
         },
         "mean_weighted_score": {
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "concept": "nlp.engagement_weighting",
           "domain": "NLP",
           "tolerance": {
@@ -719,7 +719,7 @@
           "siblings": {}
         },
         "alpha_daily": {
-          "value": -0.00044639083764572705,
+          "value": -0.00044639083764572694,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -729,7 +729,7 @@
           "siblings": {}
         },
         "beta": {
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -739,7 +739,7 @@
           "siblings": {}
         },
         "r_squared": {
-          "value": 0.0003409226348183322,
+          "value": 0.0003409226348183327,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -749,7 +749,7 @@
           "siblings": {}
         },
         "alpha_tstat": {
-          "value": -0.01258027886024492,
+          "value": -1.5522643526940212,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -775,7 +775,7 @@
         },
         {
           "name": "mean_weighted_score",
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "path": "results.json:mean_weighted_score",
           "tolerance": {
             "rtol": 0.05,
@@ -793,7 +793,7 @@
         },
         {
           "name": "annualized_return",
-          "value": -0.11547220620611719,
+          "value": -0.11547220620611716,
           "path": "results.json:annualized_return",
           "tolerance": {
             "rtol": 0.02,
@@ -802,7 +802,7 @@
         },
         {
           "name": "sharpe_ratio",
-          "value": -1.1401458219432552,
+          "value": -1.140145821943255,
           "path": "results.json:sharpe_ratio",
           "tolerance": {
             "rtol": 0.05,
@@ -811,7 +811,7 @@
         },
         {
           "name": "max_drawdown",
-          "value": 0.20902592271707085,
+          "value": 0.21207690662970524,
           "path": "results.json:max_drawdown",
           "tolerance": {
             "rtol": 0.02,
@@ -838,7 +838,7 @@
         },
         {
           "name": "alpha_annualized",
-          "value": -0.11249049108672321,
+          "value": -0.11249049108672318,
           "path": "results.json:alpha_annualized",
           "tolerance": {
             "rtol": 0.05,
@@ -847,7 +847,7 @@
         },
         {
           "name": "beta",
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "path": "results.json:beta",
           "tolerance": {
             "rtol": 0.05,
@@ -884,7 +884,7 @@
           "siblings": {}
         },
         "num_scored_nonzero": {
-          "value": 17126,
+          "value": 17163,
           "concept": "nlp.sentiment_scoring",
           "domain": "NLP",
           "tolerance": {
@@ -894,7 +894,7 @@
           "siblings": {}
         },
         "mean_weighted_score": {
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "concept": "nlp.engagement_weighting",
           "domain": "NLP",
           "tolerance": {
@@ -932,7 +932,7 @@
           "siblings": {}
         },
         "std_ic": {
-          "value": 0.35853188191838214,
+          "value": 0.3581717292590059,
           "concept": "perf.information_coefficient",
           "domain": "CIPM",
           "tolerance": {
@@ -942,7 +942,7 @@
           "siblings": {}
         },
         "ic_ir": {
-          "value": 0.3827816739528418,
+          "value": 0.3831665726664276,
           "concept": "perf.information_coefficient",
           "domain": "CIPM",
           "tolerance": {
@@ -972,7 +972,7 @@
           "siblings": {}
         },
         "alpha_daily": {
-          "value": -0.00044639083764572705,
+          "value": -0.00044639083764572694,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -982,7 +982,7 @@
           "siblings": {}
         },
         "beta": {
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -992,7 +992,7 @@
           "siblings": {}
         },
         "r_squared": {
-          "value": 0.0003409226348183322,
+          "value": 0.0003409226348183327,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1002,7 +1002,7 @@
           "siblings": {}
         },
         "alpha_tstat": {
-          "value": -0.01258027886024492,
+          "value": -1.5522643526940212,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1028,7 +1028,7 @@
         },
         {
           "name": "mean_weighted_score",
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "path": "results.json:mean_weighted_score",
           "tolerance": {
             "rtol": 0.05,
@@ -1055,7 +1055,7 @@
         },
         {
           "name": "sharpe_ratio",
-          "value": -1.1415745822660104,
+          "value": -1.1415745822660102,
           "path": "results.json:sharpe_ratio",
           "tolerance": {
             "rtol": 0.05,
@@ -1064,7 +1064,7 @@
         },
         {
           "name": "max_drawdown",
-          "value": 0.2129637985096893,
+          "value": 0.2159620521836353,
           "path": "results.json:max_drawdown",
           "tolerance": {
             "rtol": 0.02,
@@ -1100,7 +1100,7 @@
         },
         {
           "name": "beta",
-          "value": -0.01746536838545352,
+          "value": -0.017465368385453525,
           "path": "results.json:beta",
           "tolerance": {
             "rtol": 0.05,
@@ -1137,7 +1137,7 @@
           "siblings": {}
         },
         "num_scored_nonzero": {
-          "value": 17126,
+          "value": 17163,
           "concept": "nlp.sentiment_scoring",
           "domain": "NLP",
           "tolerance": {
@@ -1147,7 +1147,7 @@
           "siblings": {}
         },
         "mean_weighted_score": {
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "concept": "nlp.engagement_weighting",
           "domain": "NLP",
           "tolerance": {
@@ -1205,7 +1205,7 @@
           "siblings": {}
         },
         "annualized_volatility": {
-          "value": 0.10147078417873694,
+          "value": 0.10147078417873695,
           "concept": "pm.performance_metrics",
           "domain": "PM",
           "tolerance": {
@@ -1235,7 +1235,7 @@
           "siblings": {}
         },
         "beta": {
-          "value": -0.01746536838545352,
+          "value": -0.017465368385453525,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1245,7 +1245,7 @@
           "siblings": {}
         },
         "r_squared": {
-          "value": 0.000486438369017901,
+          "value": 0.0004864383690179016,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1255,7 +1255,7 @@
           "siblings": {}
         },
         "alpha_tstat": {
-          "value": -0.012532516386944479,
+          "value": -1.546371002830763,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1281,7 +1281,7 @@
         },
         {
           "name": "mean_weighted_score",
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "path": "results.json:mean_weighted_score",
           "tolerance": {
             "rtol": 0.05,
@@ -1308,7 +1308,7 @@
         },
         {
           "name": "sharpe_ratio",
-          "value": -1.1401458219432552,
+          "value": -1.140145821943255,
           "path": "results.json:sharpe_ratio",
           "tolerance": {
             "rtol": 0.05,
@@ -1317,7 +1317,7 @@
         },
         {
           "name": "max_drawdown",
-          "value": 0.20902592271707085,
+          "value": 0.21207690662970524,
           "path": "results.json:max_drawdown",
           "tolerance": {
             "rtol": 0.02,
@@ -1344,7 +1344,7 @@
         },
         {
           "name": "alpha_annualized",
-          "value": -0.11249049108672321,
+          "value": -0.11249049108672318,
           "path": "results.json:alpha_annualized",
           "tolerance": {
             "rtol": 0.05,
@@ -1353,7 +1353,7 @@
         },
         {
           "name": "beta",
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "path": "results.json:beta",
           "tolerance": {
             "rtol": 0.05,
@@ -1390,7 +1390,7 @@
           "siblings": {}
         },
         "num_scored_nonzero": {
-          "value": 17126,
+          "value": 17163,
           "concept": "nlp.sentiment_scoring",
           "domain": "NLP",
           "tolerance": {
@@ -1400,7 +1400,7 @@
           "siblings": {}
         },
         "mean_weighted_score": {
-          "value": 0.052656515576786134,
+          "value": 0.0554764824304027,
           "concept": "nlp.engagement_weighting",
           "domain": "NLP",
           "tolerance": {
@@ -1478,7 +1478,7 @@
           "siblings": {}
         },
         "alpha_daily": {
-          "value": -0.00044639083764572705,
+          "value": -0.00044639083764572694,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1488,7 +1488,7 @@
           "siblings": {}
         },
         "beta": {
-          "value": -0.01459378028020172,
+          "value": -0.01459378028020173,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1498,7 +1498,7 @@
           "siblings": {}
         },
         "r_squared": {
-          "value": 0.0003409226348183322,
+          "value": 0.0003409226348183327,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {
@@ -1508,7 +1508,7 @@
           "siblings": {}
         },
         "alpha_tstat": {
-          "value": -0.01258027886024492,
+          "value": -1.5522643526940212,
           "concept": "stats.regression",
           "domain": "STAT",
           "tolerance": {

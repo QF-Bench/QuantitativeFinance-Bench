@@ -776,3 +776,35 @@ def test_r_squared_chart_nonzero():
 def test_rolling_betas_chart_nonzero():
     p = OUTPUT_DIR / "rolling_betas.png"
     assert p.stat().st_size > 1000, "rolling_betas.png is too small / empty"
+
+
+INPUT_DIR = Path("/app")
+
+
+def test_all_rolling_windows_and_summaries():
+    """Check all dates and market betas with an independent multivariate QR fit."""
+    prices = pd.read_csv(INPUT_DIR / "stock_prices.csv", index_col=0, parse_dates=True)
+    factors = pd.read_csv(INPUT_DIR / "ff3_factors_daily.csv", index_col=0, parse_dates=True)
+    returns = prices.pct_change(fill_method=None).iloc[1:]
+    common_dates = returns.index.intersection(factors.index)
+    tickers = sorted(returns.columns)
+    factors = factors.loc[common_dates]
+    x = np.column_stack((np.ones(len(common_dates)), factors[["Mkt-RF", "SMB", "HML"]]))
+    y = returns.loc[common_dates, tickers].to_numpy() - factors["RF"].to_numpy()[:, None]
+    betas = []
+    for start in range(len(common_dates) - 251):
+        q, r = np.linalg.qr(x[start:start+252], mode="reduced")
+        betas.append(np.linalg.solve(r, q.T @ y[start:start+252])[1])
+    expected = np.asarray(betas)
+    reported = pd.read_csv(OUTPUT_DIR / "rolling_betas.csv")
+    assert reported["date"].tolist() == common_dates[251:].strftime("%Y-%m-%d").tolist()
+    # Six-decimal serialization is accepted, with a small floating-point allowance.
+    np.testing.assert_allclose(reported[tickers], expected, rtol=0, atol=5.0001e-7)
+    results = _load_results()["stocks"]
+    for column, ticker in enumerate(tickers):
+        series = expected[:, column]
+        summaries = {"mean": series.mean(), "std": series.std(ddof=1),
+                     "min": series.min(), "max": series.max()}
+        for suffix, value in summaries.items():
+            assert np.isclose(results[ticker]["rolling_beta_mkt_" + suffix], value,
+                              rtol=0, atol=5.0001e-7), (ticker, suffix)

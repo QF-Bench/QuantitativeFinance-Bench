@@ -28,7 +28,7 @@
       "siblings": {}
     },
     "num_scored_nonzero": {
-      "value": 17126,
+      "value": 17163,
       "concept": "nlp.sentiment_scoring",
       "domain": "NLP",
       "tolerance": {
@@ -38,7 +38,7 @@
       "siblings": {}
     },
     "mean_weighted_score": {
-      "value": 0.052656515576786134,
+      "value": 0.0554764824304027,
       "concept": "nlp.engagement_weighting",
       "domain": "NLP",
       "tolerance": {
@@ -116,7 +116,7 @@
       "siblings": {}
     },
     "alpha_daily": {
-      "value": -0.00044639083764572705,
+      "value": -0.00044639083764572694,
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {
@@ -126,7 +126,7 @@
       "siblings": {}
     },
     "beta": {
-      "value": -0.01459378028020172,
+      "value": -0.01459378028020173,
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {
@@ -136,7 +136,7 @@
       "siblings": {}
     },
     "r_squared": {
-      "value": 0.0003409226348183322,
+      "value": 0.0003409226348183327,
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {
@@ -146,7 +146,7 @@
       "siblings": {}
     },
     "alpha_tstat": {
-      "value": -0.01258027886024492,
+      "value": -1.5522643526940212,
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {

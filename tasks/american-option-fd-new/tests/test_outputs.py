@@ -327,7 +327,7 @@ class TestConvergence:
         assert diff < 1.0, f"|fine - coarse| = {diff:.4f}, expected < 1.0"
 
     def test_richardson_closer_to_fine(self):
-        """Richardson should be closer to true value than coarse."""
+        """The prescribed extrapolation lies one-third of a grid gap from fine."""
         rows = load_csv_rows("convergence.csv")
         prices = {r["grid"]: float(r["price"]) for r in rows}
         diff_rich = abs(prices["richardson"] - prices["fine"])
@@ -344,7 +344,7 @@ class TestConvergence:
             f"Richardson={prices['richardson']:.6f}, expected (4*fine-coarse)/3={expected:.6f}"
 
     def test_convergence_ratio(self):
-        """Convergence ratio should be ~4 for 2nd-order CN."""
+        """The two-grid Richardson formula implies ratio four algebraically."""
         rows = load_csv_rows("convergence.csv")
         prices = {r["grid"]: float(r["price"]) for r in rows}
         rich = prices["richardson"]
@@ -433,3 +433,71 @@ class TestSummary:
         data = load_json("summary.json")
         assert 2.0 < data["convergence_ratio"] < 8.0, \
             f"convergence_ratio = {data['convergence_ratio']:.2f}, expected ~4"
+
+
+def test_entire_exported_american_grid_obeys_exercise_bound():
+    rows = load_csv_rows("american_put_grid.csv")
+    for row in rows:
+        stock = float(row["S"])
+        intrinsic = max(100.0 - stock, 0.0)
+        values = np.array([float(v) for k, v in row.items() if k != "S"])
+        assert np.all(np.isfinite(values))
+        assert np.all(values >= intrinsic - 1e-6)
+        assert np.all(values <= 100.0 + 1e-6)
+        if stock == 0.0:
+            np.testing.assert_allclose(values, 100.0, atol=1e-6, rtol=0)
+
+def test_dividend_event_sampling_and_obstacle():
+    # The post-dividend exercise region is larger than immediately before the
+    # dividend: waiting receives the put's beneficial stock-price drop. These
+    # broad checks distinguish event sides without imposing a hidden FD price.
+    times, boundary = load_exercise_boundary()
+    for dividend in (0.25, 0.75):
+        event = np.argmin(abs(times - dividend))
+        assert abs(times[event] - dividend) < 1e-6
+        assert boundary[event] > boundary[event - 1]
+        assert 0 <= boundary[event - 1] < 100
+
+def test_terminal_grid_and_boundary_convention():
+    rows = load_csv_rows("american_put_grid.csv")
+    last = max((key for key in rows[0] if key != "S"), key=float)
+    for row in rows:
+        assert abs(float(row[last]) - max(100 - float(row["S"]), 0)) < 1e-6
+    times, boundary = load_exercise_boundary()
+    np.testing.assert_allclose(times, np.linspace(0, 1, 601), atol=6e-7, rtol=0)
+    assert abs(boundary[-1] - 100) < 1e-6
+    assert np.all(boundary[:-1] < 100)
+
+
+def test_dividend_jump_cashflow_bound():
+    """Value just before each event includes the cash-dividend stock shift.
+
+    Integrate the submitted post-event piecewise-linear value against the exact
+    short-horizon lognormal law. Holding is a lower bound for the American put;
+    the short-horizon early-exercise interest benefit is at most K*(1-discount).
+    Allow 0.08 for interpolation on the deliberately sparse exported stock grid.
+    """
+    from scipy.special import ndtr
+    rows = load_csv_rows("american_put_grid.csv")
+    stocks = np.array([float(row["S"]) for row in rows])
+    columns = [key for key in rows[0] if key != "S"]
+    times = np.array(list(map(float, columns)))
+    np.testing.assert_allclose(stocks, np.arange(0, 301, 5), atol=1e-8)
+    np.testing.assert_allclose(times, np.linspace(0, 1, 61), atol=6e-5, rtol=0)
+    horizon = 10/600
+    std = .30*np.sqrt(horizon)
+    discount = np.exp(-.05*horizon)
+    for event in (.25, .75):
+        event_col = columns[np.argmin(abs(times-event))]
+        before_col = columns[np.argmin(abs(times-event+horizon))]
+        post = np.array([float(row[event_col]) for row in rows])
+        shifted_knots = stocks + 2.50
+        slopes = np.diff(post)/np.diff(stocks)
+        intercepts = post[:-1] - slopes*shifted_knots[:-1]
+        for stock in (90., 100., 110.):
+            z = (np.log(shifted_knots/stock)-(.05-.5*.30**2)*horizon)/std
+            probability = np.diff(ndtr(z))
+            first_moment = stock*np.exp(.05*horizon)*np.diff(ndtr(z-std))
+            holding = discount*(post[0]*ndtr(z[0]) + slopes@first_moment + intercepts@probability)
+            actual = float(rows[int(stock/5)][before_col])
+            assert holding-.08 <= actual <= holding+100*(1-discount)+.08

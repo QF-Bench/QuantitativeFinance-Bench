@@ -13,39 +13,47 @@
   "deliverables": [
     {
       "name": "capital_charge",
-      "value": 0.3232362402797153,
+      "value": 0.4005012013602757,
       "path": "results.json:capital_charge",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "rtol": 0.005
       }
     },
     {
       "name": "stressed_var",
-      "value": 0.0733085731049146,
+      "value": 0.08623600511129605,
       "path": "results.json:stressed_var",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.005
       }
     },
     {
       "name": "var_component",
-      "value": 0.07398709172300569,
+      "value": 0.10729878398186919,
       "path": "results.json:var_component",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "rtol": 0.005
       }
     },
     {
       "name": "svar_component",
-      "value": 0.24924914855670965,
+      "value": 0.2932024173784066,
       "path": "results.json:svar_component",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "rtol": 0.005
       }
     }
-  ]
+  ],
+  "parameters": {
+    "fast_ema": 32,
+    "slow_ema": 64,
+    "vol_lookback": 40,
+    "vol_target": 0.15,
+    "max_leverage_per_asset": 1.0,
+    "risk_free_annual": 0.01,
+    "n_assets": 5,
+    "confidence_level": 0.99,
+    "holding_period": 10,
+    "basel_multiplier": 3.4
+  }
 }

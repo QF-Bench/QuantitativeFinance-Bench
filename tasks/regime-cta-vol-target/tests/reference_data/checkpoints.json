@@ -1,110 +1,101 @@
 {
   "checkpoints": {
     "static_annualized_return": {
-      "value": 0.04120655630404832,
+      "value": 0.042067328892870355,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.15,
-        "atol": 0.005
+        "atol": 1e-05
       },
       "siblings": {}
     },
     "static_annualized_volatility": {
-      "value": 0.0784208550075487,
+      "value": 0.07838970471634649,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.15,
-        "atol": 0.005
+        "atol": 1e-05
       },
       "siblings": {}
     },
     "static_sharpe_ratio": {
-      "value": 0.3979369556866527,
+      "value": 0.3980950868097971,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.2,
-        "atol": 0.02
+        "atol": 1e-05
       },
       "siblings": {}
     },
     "static_max_drawdown": {
-      "value": 0.12154166336517966,
+      "value": -0.12154166336517969,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.1,
-        "atol": 0.13369582970169763
+        "atol": 1e-05
       },
       "siblings": {}
     },
     "static_calmar_ratio": {
-      "value": 0.3390323545288384,
+      "value": 0.3461144740670233,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.25,
-        "atol": 0.02
+        "atol": 1e-05
       },
       "siblings": {}
     },
     "dynamic_annualized_return": {
-      "value": 0.041101754128395264,
+      "value": 0.051151500882512864,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.15,
-        "atol": 0.005
+        "rtol": 0.002
       },
       "siblings": {}
     },
     "dynamic_annualized_volatility": {
-      "value": 0.07628117086277178,
+      "value": 0.07619501994955584,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.15,
-        "atol": 0.005
+        "rtol": 0.002
       },
       "siblings": {}
     },
     "dynamic_max_drawdown": {
-      "value": 0.1401271650341201,
+      "value": -0.12557450221339717,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.1,
-        "atol": 0.1541398815375321
+        "atol": 0.0005
       },
       "siblings": {}
     },
     "dynamic_calmar_ratio": {
-      "value": 0.2933175313893437,
+      "value": 0.4073398658239369,
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.25,
-        "atol": 0.02
+        "atol": 0.002
       },
       "siblings": {}
     },
     "avg_garch_persistence": {
-      "value": 0.9520839344971348,
+      "value": 0.9520857750014008,
       "concept": "vol.garch",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.05
+        "rtol": 0.002
       },
       "siblings": {}
     },
     "avg_long_run_variance": {
-      "value": 0.00027664762290434874,
+      "value": 0.00027665825885770317,
       "concept": "vol.garch",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.1
+        "rtol": 0.01
       },
       "siblings": {}
     },
@@ -113,8 +104,7 @@
       "concept": "",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "atol": 1e-05
       },
       "siblings": {}
     },
@@ -123,28 +113,25 @@
       "concept": "",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "atol": 1e-05
       },
       "siblings": {}
     },
     "regime_thresh_lo": {
-      "value": 0.1835040809266957,
+      "value": 0.18350415776661996,
       "concept": "",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.002
       },
       "siblings": {}
     },
     "regime_thresh_hi": {
-      "value": 0.23156323823701036,
+      "value": 0.23156432329797072,
       "concept": "",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.002
       },
       "siblings": {}
     }

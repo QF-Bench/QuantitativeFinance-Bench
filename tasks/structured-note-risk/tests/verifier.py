@@ -582,6 +582,81 @@ def write_outputs(
 # Main entry point
 # ══════════════════════════════════════════════════════════════════════
 
+def validate_invariants(agent_outputs: dict, cc: dict, checks: dict,
+                        path_name: str = "primary") -> None:
+    """Enforce mathematical domains as well as tolerant numerical targets.
+
+    Read the values already resolved by the verifier, preserving its flat,
+    wrapped and value-matched checkpoint representations.
+    """
+    reported = {}
+    for item in cc.get("deliverables", []):
+        if item.get("actual") is not None:
+            reported.setdefault(item["name"], []).append(item["actual"])
+    for item in checks.get("results", []):
+        if item.get("actual") is not None:
+            name = item.get("matched_as", item["term"])
+            reported.setdefault(name, []).append(item["actual"])
+
+    errors = {}
+
+    def finite(value):
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+    def reject(names, message):
+        for name in names:
+            errors[name] = message
+
+    def value(name):
+        values = reported.get(name, [])
+        return values[0] if values and all(finite(v) for v in values) else None
+
+    def close(a, b, rtol=1e-5, atol=1e-8):
+        return math.isclose(a, b, rel_tol=rtol, abs_tol=atol)
+
+    for name, values in reported.items():
+        if any(not finite(v) for v in values):
+            reject([name], "Reported metrics must be finite numbers.")
+        elif len(values) > 1 and any(not close(v, values[0], rtol=1e-3) for v in values[1:]):
+            reject([name], "Deliverable and checkpoint must describe the same quantity.")
+    omega, alpha, beta, persistence, lrv = [value(name) for name in (
+        "garch_omega", "garch_alpha", "garch_beta", "garch_persistence", "long_run_variance")]
+    for name in ("garch_alpha", "garch_beta"):
+        if any(finite(v) and v < 0 for v in reported.get(name, [])):
+            reject([name], "GARCH variance coefficients must be nonnegative.")
+    if omega is not None and omega <= 0:
+        reject(["garch_omega"], "GARCH omega must be positive.")
+    if persistence is not None and not 0 <= persistence < 1:
+        reject(["garch_persistence", "long_run_variance"], "A stationary long-run variance requires persistence below one.")
+    if None not in (alpha, beta, persistence) and not close(persistence, alpha + beta, atol=2e-6):
+        reject(["garch_alpha", "garch_beta", "garch_persistence"], "Persistence must equal alpha plus beta.")
+    if None not in (omega, persistence, lrv) and 0 <= persistence < 1:
+        # Relative tolerance permits rounded fitted parameters, not a fallback sample variance.
+        if lrv <= 0 or not close(lrv, omega / (1 - persistence), rtol=1e-3, atol=1e-9):
+            reject(["long_run_variance"], "Long-run variance must equal omega/(1-persistence).")
+    var, es = value("note_var_99"), value("note_es_99")
+    if var is not None and es is not None:
+        z99 = 2.3263478740408408
+        ratio = math.exp(-z99*z99/2) / math.sqrt(2*math.pi) / (0.01*z99)
+        if var < 0 or es < 0 or not close(es, var * ratio, rtol=1e-3):
+            reject(["note_var_99", "note_es_99"], "Gaussian ES/VaR must equal phi(z)/(0.01*z).")
+    if not errors:
+        return
+    cc["invariant_errors"] = errors
+    cc["status"] = "FAIL"
+    for item in cc.get("deliverables", []):
+        if item["name"] in errors:
+            item["status"] = "FAIL"
+            item["invariant_error"] = errors[item["name"]]
+    for item in checks.get("results", []):
+        name = item.get("matched_as", item["term"])
+        if name in errors:
+            item["status"] = "INCORRECT"
+            item["error_class"] = "domain_or_identity"
+            item["invariant_error"] = errors[name]
+    checks["correct"] = sum(item["status"] == "CORRECT" for item in checks.get("results", []))
+
+
 def _score_path(cc: dict, checks: dict) -> int:
     """Score a verification result for path ranking.
 
@@ -640,6 +715,7 @@ def run_verification(
 
             path_cc = check_cc(agent_outputs, path_expected)
             path_checks = check_intermediates(solution, path_ref, agent_outputs)
+            validate_invariants(agent_outputs, path_cc, path_checks, path_entry.get("name", "primary"))
             score = _score_path(path_cc, path_checks)
 
             if score > best_score:
@@ -655,6 +731,7 @@ def run_verification(
         cc = check_cc(agent_outputs, ref["expected"])
         checks = check_intermediates(solution, ref, agent_outputs)
         matched_path_name = None
+        validate_invariants(agent_outputs, cc, checks)
 
     # Phase D: Classify
     classification = classify(cc, checks)
