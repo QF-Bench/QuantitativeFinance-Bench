@@ -501,3 +501,148 @@ def test_dividend_jump_cashflow_bound():
             holding = discount*(post[0]*ndtr(z[0]) + slopes@first_moment + intercepts@probability)
             actual = float(rows[int(stock/5)][before_col])
             assert holding-.08 <= actual <= holding+100*(1-discount)+.08
+
+
+
+@pytest.fixture(scope="module")
+def independent_fd():
+    """Solve the prescribed CN obstacle problem with Howard policy iteration.
+
+    This oracle uses banded direct solves instead of PSOR. It imports neither
+    the reference nor submitted code and checks its complementarity residual.
+    """
+    from scipy.linalg import solve_banded
+
+    def far_field(t, put, american, divs, pre=False):
+        if put:
+            return (100. if american else 100*np.exp(-.05*(1-t))), 0.
+        future = [(u,d) for u,d in divs if u>t+1e-12 or pre and abs(u-t)<1e-12]
+        expiry = 300-100*np.exp(-.05*(1-t))-sum(d*np.exp(-.05*(u-t)) for u,d in future)
+        values = [expiry]
+        if american:
+            values.append(200.)
+            values += [300-100*np.exp(-.05*(u-t))-sum(d*np.exp(-.05*(v-t))
+                       for v,d in future if v<u-1e-12) for u,_ in future]
+        return 0., max(values)
+
+    def solve(put, american, ns=300, nt=600, divs=((.25,2.5),(.75,2.5))):
+        stocks = np.linspace(0,300,ns+1)
+        payoff = np.maximum(100-stocks if put else stocks-100,0.)
+        values = payoff.copy()
+        j = np.arange(1,ns)
+        dt = 1/nt
+        lower = -dt*.25*(.09*j*j-.05*j)
+        diagonal = 1+dt*.5*(.09*j*j+.05)
+        upper = -dt*.25*(.09*j*j+.05*j)
+        grids = {nt:values.copy()}
+        boundaries = np.zeros(nt+1); boundaries[-1]=100
+        for n in range(nt-1,-1,-1):
+            t=n/nt
+            rhs = (2-diagonal)*values[1:-1]-lower*values[:-2]-upper*values[2:]
+            left,right = far_field(t,put,american,divs)
+            rhs[0] -= lower[0]*left; rhs[-1] -= upper[-1]*right
+            x=values[1:-1].copy(); obstacle=payoff[1:-1]
+            for iteration in range(100 if american else 1):
+                residual=diagonal*x-rhs
+                residual[1:] += lower[1:]*x[:-1]
+                residual[:-1] += upper[:-1]*x[1:]
+                active = x-obstacle<=residual if american else np.zeros_like(x,dtype=bool)
+                bands=np.zeros((3,len(x)))
+                bands[1]=np.where(active,1,diagonal)
+                bands[0,1:]=np.where(active[:-1],0,upper[:-1])
+                bands[2,:-1]=np.where(active[1:],0,lower[1:])
+                y=solve_banded((1,1),bands,np.where(active,obstacle,rhs))
+                change=np.max(abs(y-x));x=y
+                if change<1e-11: break
+            residual=diagonal*x-rhs
+            residual[1:] += lower[1:]*x[:-1]
+            residual[:-1] += upper[:-1]*x[1:]
+            if american:
+                assert np.max(abs(np.minimum(x-obstacle,residual)))<1e-8
+            values=np.r_[left,x,right]
+            if put and american:
+                active=(stocks<100)&(abs(values-payoff)<=1e-6)
+                boundaries[n]=stocks[active][-1] if np.any(active) else 0.
+            if n%10==0: grids[n]=values.copy()
+            # Save post-event states before applying the backward cash jump.
+            for date,cash in divs:
+                if abs(t-date)<1e-12:
+                    values=np.interp(np.maximum(stocks-cash,0),stocks,values)
+                    if american: values=np.maximum(values,payoff)
+                    values[0],values[-1]=far_field(t,put,american,divs,pre=True)
+        index=round(ns/3)
+        return dict(value=values[index],delta=(values[index+1]-values[index-1])/(600/ns),
+                    grid=np.column_stack([grids[n][::5] for n in sorted(grids)]),
+                    boundary=boundaries)
+
+    result={}
+    for american in (True,False):
+        for put in (True,False):
+            name=("american_" if american else "european_")+("put" if put else "call")
+            result[name]=solve(put,american)
+            result[name+"_no_div"]=solve(put,american,divs=())
+    result["coarse"]=solve(True,True,ns=150,nt=300)
+    return result
+
+
+def test_all_eight_prices_and_four_deltas_against_independent_fd(independent_fd):
+    prices=load_json("option_values.json")
+    deltas={row["option_type"]:float(row["delta"]) for row in load_csv_rows("greeks.csv")}
+    for name,result in independent_fd.items():
+        if name=="coarse": continue
+        assert np.isfinite(prices[name])
+        assert abs(prices[name]-result["value"])<1e-4, name
+        if not name.endswith("_no_div"):
+            assert np.isfinite(deltas[name])
+            assert abs(deltas[name]-result["delta"])<2e-5, name
+
+
+def test_every_grid_and_boundary_value_against_independent_fd(independent_fd):
+    rows=load_csv_rows("american_put_grid.csv")
+    columns=[name for name in rows[0] if name!="S"]
+    values=np.array([[float(row[name]) for name in columns] for row in rows])
+    np.testing.assert_allclose(values,independent_fd["american_put"]["grid"],rtol=0,atol=1e-4)
+    times,boundary=load_exercise_boundary()
+    assert np.all(np.isfinite(boundary))
+    np.testing.assert_allclose(boundary,independent_fd["american_put"]["boundary"],rtol=0,atol=1e-6)
+
+
+def test_convergence_levels_and_full_summary_consistency(independent_fd):
+    rows=load_csv_rows("convergence.csv")
+    values={row["grid"]:float(row["price"]) for row in rows}
+    prices=load_json("option_values.json")
+    summary=load_json("summary.json")
+    assert np.isfinite(list(values.values())).all()
+    assert abs(values["fine"]-independent_fd["american_put"]["value"])<1e-4
+    assert abs(values["coarse"]-independent_fd["coarse"]["value"])<1e-4
+    assert abs(values["fine"]-prices["american_put"])<1.2e-6
+    times,boundary=load_exercise_boundary()
+    expected=dict(no_div_call_diff=abs(prices["american_call_no_div"]-prices["european_call_no_div"]),
+        early_exercise_premium_put=prices["american_put"]-prices["european_put"],
+        early_exercise_premium_call=prices["american_call"]-prices["european_call"],
+        exercise_boundary_at_T=boundary[-1],exercise_boundary_at_0=boundary[0],
+        richardson_estimate=(4*values["fine"]-values["coarse"])/3)
+    for name,value in expected.items():
+        assert np.isfinite(summary[name])
+        assert abs(summary[name]-value)<=2e-6, name
+    # Compute ratio from unrounded relation, since six-decimal CSV prices can
+    # materially affect the small extrapolation gap in its literal quotient.
+    assert np.isfinite(summary["convergence_ratio"])
+    assert abs(summary["convergence_ratio"]-4.)<.01
+    for kind in ("put","call"):
+        assert summary["american_geq_european_"+kind] is bool(prices["american_"+kind]>=prices["european_"+kind])
+
+
+
+@pytest.mark.parametrize("filename", ['exercise_boundary.png'])
+def test_plot_is_readable_and_nonempty(filename):
+    from PIL import Image
+    with Image.open(os.path.join(OUTPUT_DIR,filename)) as picture:
+        assert picture.format == "PNG"
+        picture.load()
+        assert picture.width >= 2 and picture.height >= 2
+        pixels = np.asarray(picture.convert("RGB"))
+        # Do not require a particular style or pixel match. Reject a missing,
+        # corrupt, one-pixel or constant-color placeholder instead of certifying
+        # its axes/data semantics from file existence alone.
+        assert np.any(pixels != pixels[0, 0])

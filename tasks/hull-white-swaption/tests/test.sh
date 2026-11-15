@@ -20,6 +20,7 @@ uvx \
   -w pytest-json-ctrf==0.3.5 \
   -w numpy \
   -w scipy \
+  -w pillow \
   -w pandas \
   pytest --ctrf /logs/verifier/ctrf.json /tests/test_outputs.py -rA
 
