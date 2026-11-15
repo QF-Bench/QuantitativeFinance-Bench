@@ -76,3 +76,42 @@ def test_inconsistent_regime_count_sum_rejected(tmp_path):
     results, cp = _reference_output()
     cp["regime_count_crisis"]["value"] += 1
     assert _grade_fixture(tmp_path, results, cp) != "PERFECT"
+
+
+@pytest.mark.parametrize("bad_canonical", [False, True])
+def test_aliases_cannot_inflate_checkpoint_reward(tmp_path, bad_canonical):
+    results, cp = _reference_output()
+    cp = {**{"alias_" + key: dict(entry) for key, entry in cp.items()}, **cp}
+    if bad_canonical:
+        key = next(key for key in cp if not key.startswith("alias_") and cp[key]["value"] != 0)
+        cp[key] = {"value": cp[key]["value"] * 100}
+    classification = _grade_fixture(tmp_path, results, cp)
+    reward = float((tmp_path / "log/reward.txt").read_text())
+    assert 0 <= reward <= 1
+    if bad_canonical:
+        assert classification != "PERFECT" and reward < 1
+    else:
+        assert classification == "PERFECT" and reward == 1
+
+
+def test_six_significant_digits_remain_valid(tmp_path):
+    results, cp = _reference_output()
+    rounded = lambda x: float(f"{x:.6g}") if isinstance(x, float) else x
+    results = {key: rounded(value) for key, value in results.items()}
+    cp = {key: {"value": rounded(entry["value"])} for key, entry in cp.items()}
+    assert _grade_fixture(tmp_path, results, cp) == "PERFECT"
+
+
+def test_tail_risks_cannot_be_consistently_forty_percent_low(tmp_path):
+    results, cp = _reference_output()
+    results["cvar"] *= .6
+    cp["cvar"]["value"] *= .6
+    cp["portfolio_var_99"]["value"] *= .6
+    assert _grade_fixture(tmp_path, results, cp) != "PERFECT"
+
+
+def test_consistent_wrong_regime_counts_rejected(tmp_path):
+    results, cp = _reference_output()
+    cp["regime_count_crisis"]["value"] -= 2
+    cp["regime_count_risk_off"]["value"] += 2
+    assert _grade_fixture(tmp_path, results, cp) != "PERFECT"

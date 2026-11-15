@@ -84,12 +84,7 @@ def _resolve_path(data: dict, path: str) -> Any:
 
 
 def _norm_drawdown(name: str, agent_val: Any, ref_val: Any) -> tuple:
-    """Normalize drawdown sign — accept both positive and negative convention."""
-    if "drawdown" in name.lower():
-        if isinstance(agent_val, (int, float)):
-            agent_val = abs(agent_val)
-        if isinstance(ref_val, (int, float)):
-            ref_val = abs(ref_val)
+    """Preserve signs: this task explicitly requires positive loss magnitudes."""
     return agent_val, ref_val
 
 
@@ -250,6 +245,7 @@ def check_intermediates(
         }
     checkpoint_results = []
     matched_refs = set()
+    canonical_names = set(intermediates) & set(checkpoints_ref)
 
     # ── Label matching: agent term → reference checkpoint ──
     for term_name, entry in intermediates.items():
@@ -314,7 +310,7 @@ def check_intermediates(
             # No label match — try value matching against all unmatched refs
             value_matched_ref = None
             for ref_name, ref_cp in checkpoints_ref.items():
-                if ref_name in matched_refs:
+                if ref_name in matched_refs or ref_name in canonical_names:
                     continue
                 if agent_value is not None:
                     tol = ref_cp.get("tolerance", {"rtol": 1e-3})
@@ -364,7 +360,8 @@ def check_intermediates(
     # ── Coverage ──
     total_expected = len(checkpoints_ref)
     reported = sum(1 for r in checkpoint_results if r["status"] != "MISSING")
-    correct = sum(1 for r in checkpoint_results if r["status"] == "CORRECT")
+    correct = len({r.get("matched_as", r["term"]) for r in checkpoint_results
+                   if r["status"] == "CORRECT"})
 
     completeness = "COMPLETE" if all(
         r["status"] != "MISSING" for r in checkpoint_results
@@ -543,7 +540,7 @@ def write_outputs(
 
     cp_total = max(checks.get("total_expected", 0), 1)
     cp_correct = checks.get("correct", 0)
-    cp_frac = cp_correct / cp_total
+    cp_frac = min(cp_correct, cp_total) / cp_total
 
     reward = 0.5 * cc_frac + 0.5 * cp_frac
     (log_dir / "reward.txt").write_text(str(round(reward, 6)))
@@ -640,6 +637,104 @@ def validate_invariants(agent_outputs: dict, cc: dict, checks: dict,
         ratio = math.exp(-z99*z99/2) / math.sqrt(2*math.pi) / (0.01*z99)
         if var < 0 or es < 0 or not close(es, var * ratio, rtol=1e-3):
             reject(["note_var_99", "note_es_99"], "Gaussian ES/VaR must equal phi(z)/(0.01*z).")
+    # Validate economic quantities against the submitted volatility, so valid
+    # optimizer/initialization choices are not mistaken for pricing mistakes.
+    data = Path(__file__).resolve().parent.parent / "environment" / "data"
+    if not data.exists():
+        data = Path("/app/data")
+    params = load_json(data / "params.json")
+    if params:
+        S, K, B, rate, maturity, N = [params[k] for k in ("S0", "K", "B", "r", "T", "notional")]
+        n_options = params["participation"] * N / S
+        bond = N * math.exp(-rate * maturity)
+
+        def require(name, target, rtol=1e-3, atol=2e-6):
+            actual = value(name)
+            if actual is not None and not close(actual, target, rtol=rtol, atol=atol):
+                reject([name], "Quantity is inconsistent with the stated model and submitted inputs.")
+
+        require("bond_pv", bond, rtol=1e-6)
+        require("n_options", n_options, rtol=1e-5)
+        sigma = value("garch_vol")
+        if sigma is not None and sigma > 0:
+            def price(spot, vol):
+                if spot <= B:
+                    return 0.0
+                sd = vol * math.sqrt(maturity)
+                drift = rate - vol * vol / 2
+                x, cutoff = math.log(spot / B), max(0.0, math.log(K / B))
+                def tail_payoff(mean):
+                    cdf = lambda z: (1 + math.erf(z / math.sqrt(2))) / 2
+                    return (B * math.exp(mean + sd * sd / 2) * cdf((mean + sd * sd - cutoff) / sd)
+                            - K * cdf((mean - cutoff) / sd))
+                return math.exp(-rate * maturity) * (tail_payoff(x + drift * maturity)
+                    - math.exp(-2 * drift * x / (vol * vol)) * tail_payoff(-x + drift * maturity))
+            unit = price(S, sigma)
+            delta = (price(S * 1.0001, sigma) - price(S * .9999, sigma)) / (.0002 * S)
+            require("option_unit_price", unit)
+            require("option_delta", delta)
+            option_value = value("option_value")
+            unit_reported, delta_reported = value("option_unit_price"), value("option_delta")
+            if unit_reported is not None:
+                require("option_value", n_options * unit_reported)
+            if option_value is not None:
+                require("fair_value", bond + option_value, rtol=1e-5, atol=2e-4)
+            if delta_reported is not None:
+                require("note_delta", n_options * delta_reported)
+            note_delta = value("note_delta")
+            if note_delta is not None:
+                scale = abs(note_delta) * S * sigma / math.sqrt(252)
+                require("note_var_99", 2.3263478740408408 * scale)
+            fair = value("fair_value")
+            if fair is not None and fair > 0:
+                require("markup_pct", 100 * (N - fair) / fair, rtol=1e-4, atol=2e-5)
+            breakeven = value("breakeven_vol")
+            if breakeven is not None and breakeven > 0:
+                if not close(bond + n_options * price(S, breakeven), N, rtol=1e-6, atol=2e-4):
+                    reject(["breakeven_vol"], "Breakeven volatility must make the note worth par.")
+            if None not in (omega, alpha, beta, lrv):
+                # Default exponentially weighted backcast and sample-variance
+                # initialization are both defensible unstated GARCH choices.
+                import csv
+                with (data / "returns.csv").open() as stream:
+                    returns = [float(row["log_return"]) for row in csv.DictReader(stream)]
+                count = min(75, len(returns))
+                backcast = sum(.94**i * returns[i]**2 for i in range(count)) / sum(.94**i for i in range(count))
+                average = sum(returns) / len(returns)
+                sample = sum((r-average)**2 for r in returns) / len(returns)
+                initial = sample if path_name.startswith("sample_variance_initialization") else omega + (alpha + beta) * backcast
+                h = initial
+                objective = 0.0
+                for i, ret in enumerate(returns):
+                    if i:
+                        h = omega + alpha * returns[i-1]**2 + beta * h
+                    if h <= 0:
+                        objective = math.inf
+                        break
+                    # Percent-return units avoid a large harmless log offset.
+                    objective += .5 * (math.log(h * 10000) + ret * ret / h)
+                reference_values = {item.get("matched_as", item["term"]): item.get("expected")
+                                    for item in checks.get("results", []) if "expected" in item}
+                ro, ra, rb = [reference_values[name] for name in ("garch_omega", "garch_alpha", "garch_beta")]
+                ref_h = sample if path_name.startswith("sample_variance_initialization") else ro + (ra + rb) * backcast
+                optimum = 0.0
+                for i, ret in enumerate(returns):
+                    if i:
+                        ref_h = ro + ra * returns[i-1]**2 + rb * ref_h
+                    optimum += .5 * (math.log(ref_h * 10000) + ret * ret / ref_h)
+                if objective > optimum + .05:
+                    reject(["garch_omega", "garch_alpha", "garch_beta"], "Reported coefficients do not adequately fit the Gaussian likelihood for this initialization.")
+                candidates = []
+                for initial in (initial,):
+                    h = initial
+                    for ret in returns[:-1]:
+                        h = omega + alpha * ret * ret + beta * h
+                    if h > 0:
+                        candidates.append(math.sqrt(252 * h))
+                if lrv > 0:
+                    candidates.append(math.sqrt(252 * lrv))
+                if not any(close(sigma, candidate, rtol=2e-3, atol=2e-6) for candidate in candidates):
+                    reject(["garch_vol"], "Volatility must be final fitted or stationary annualized GARCH volatility.")
     if not errors:
         return
     cc["invariant_errors"] = errors
@@ -654,7 +749,9 @@ def validate_invariants(agent_outputs: dict, cc: dict, checks: dict,
             item["status"] = "INCORRECT"
             item["error_class"] = "domain_or_identity"
             item["invariant_error"] = errors[name]
-    checks["correct"] = sum(item["status"] == "CORRECT" for item in checks.get("results", []))
+    checks["correct"] = len({item.get("matched_as", item["term"])
+                             for item in checks.get("results", [])
+                             if item["status"] == "CORRECT"})
 
 
 def _score_path(cc: dict, checks: dict) -> int:

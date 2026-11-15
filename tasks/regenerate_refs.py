@@ -14,7 +14,7 @@ import sys
 import numpy as np
 import pandas as pd
 from arch import arch_model
-from scipy.optimize import brentq
+from scipy.optimize import brentq, minimize
 from scipy.stats import norm
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -227,7 +227,7 @@ def regenerate_bgv():
 # ═══════════════════════════════════════════════════════════════════
 
 def _snr_pipeline(S0, K, B, r, T, notional, participation, garch_vol,
-                   omega, alpha, beta, persistence, long_run_variance):
+                   omega, alpha, beta, persistence, long_run_variance, delta_bump=0.01):
     """Run SNR pipeline from garch_vol onward. Returns deliverables + checkpoints."""
     bond_pv = notional * math.exp(-r * T)
     n_options = participation * notional / S0
@@ -243,7 +243,7 @@ def _snr_pipeline(S0, K, B, r, T, notional, participation, garch_vol,
     except ValueError:
         breakeven_vol = float('nan')
 
-    dS = 0.01 * S0
+    dS = delta_bump * S0
     price_up = barrier_option_price(S0 + dS, K, T, r, garch_vol, B)
     price_dn = barrier_option_price(S0 - dS, K, T, r, garch_vol, B)
     option_delta = (price_up - price_dn) / (2.0 * dS)
@@ -290,6 +290,43 @@ def _snr_pipeline(S0, K, B, r, T, notional, participation, garch_vol,
     }
 
     return deliverables, checkpoints
+
+
+def _snr_sample_variance_fit(returns):
+    """Zero-mean Gaussian GARCH with h0=population sample variance."""
+    y = np.asarray(returns, dtype=float) * 100
+    initial = float(np.var(y))
+
+    def conditional_variance(parameters):
+        omega, alpha, beta = parameters
+        h = np.empty(len(y))
+        h[0] = initial
+        for i in range(1, len(y)):
+            h[i] = omega + alpha * y[i - 1] ** 2 + beta * h[i - 1]
+        return h
+
+    def objective(parameters):
+        omega, alpha, beta = parameters
+        if omega <= 0 or min(alpha, beta) < 0 or alpha + beta >= 1:
+            return 1e20
+        h = conditional_variance(parameters)
+        return .5 * float(np.sum(np.log(h) + y * y / h))
+
+    fits = [minimize(objective, start, method='SLSQP',
+                    bounds=[(1e-8, 10), (0, .999), (0, .999)],
+                    constraints=[{'type': 'ineq', 'fun': lambda x: .999999 - x[1] - x[2]}],
+                    options={'ftol': 1e-11, 'maxiter': 2000})
+            for start in [[.02, .015, .975], [.2, .05, .8], [.05, .1, .8]]]
+    fits = [fit for fit in fits if fit.success and np.isfinite(fit.fun)]
+    if not fits:
+        raise RuntimeError('No converged sample-variance-initialized GARCH fit')
+    fit = min(fits, key=lambda item: item.fun)
+    omega, alpha, beta = map(float, fit.x)
+    omega /= 10000
+    persistence = alpha + beta
+    return dict(omega=omega, alpha=alpha, beta=beta, persistence=persistence,
+                long_run_variance=omega / (1 - persistence),
+                garch_vol=float(np.sqrt(252 * conditional_variance(fit.x)[-1]) / 100))
 
 
 def regenerate_snr():
@@ -354,6 +391,16 @@ def regenerate_snr():
             print(f"  fair_value={d[0]['value']:.6f}, markup_pct={d[1]['value']:.6f}")
             print(f"  note_var_99={d[2]['value']:.6f}, note_es_99={d[3]['value']:.6f}")
 
+    sample_fit = _snr_sample_variance_fit(returns)
+    for suffix, vol in [('', sample_fit['garch_vol']),
+                        ('_unconditional_vol', math.sqrt(252 * sample_fit['long_run_variance']))]:
+        values = dict(sample_fit, garch_vol=vol)
+        sample_d, sample_c = _snr_pipeline(
+            S0=S0, K=K, B=B, r=r, T=T, notional=notional,
+            participation=participation, delta_bump=1e-4, **values)
+        paths.append({'name': 'sample_variance_initialization' + suffix, 'primary': False,
+                      'description': 'Population sample-variance initialization; ' + ('long-run' if suffix else 'final conditional') + ' volatility',
+                      'deliverables': sample_d, 'checkpoints': sample_c})
     primary_d = paths[0]['deliverables']
     primary_c = paths[0]['checkpoints']
     write_refs_multipath(task_dir, paths, primary_d, primary_c,

@@ -32,8 +32,7 @@
       "concept": "nlp.sentiment_scoring",
       "domain": "NLP",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 200
+        "atol": 0
       },
       "siblings": {}
     },
@@ -42,8 +41,8 @@
       "concept": "nlp.engagement_weighting",
       "domain": "NLP",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.02
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -61,7 +60,7 @@
       "concept": "perf.information_coefficient",
       "domain": "CIPM",
       "tolerance": {
-        "atol": 2
+        "atol": 0
       },
       "siblings": {}
     },
@@ -70,8 +69,8 @@
       "concept": "perf.information_coefficient",
       "domain": "CIPM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -80,8 +79,8 @@
       "concept": "perf.information_coefficient",
       "domain": "CIPM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -90,8 +89,8 @@
       "concept": "perf.information_coefficient",
       "domain": "CIPM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.02
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -100,8 +99,8 @@
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.02,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -110,8 +109,8 @@
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.02,
-        "atol": 0.01
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -120,8 +119,8 @@
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 1e-05
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -130,8 +129,8 @@
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -140,8 +139,8 @@
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -150,8 +149,8 @@
       "concept": "stats.regression",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.1
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     }

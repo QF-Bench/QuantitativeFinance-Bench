@@ -218,7 +218,7 @@ def solve_kelly(returns_data=None):
     # Conventional median averages the two central observations for even samples.
 
     results = {'num_valid_observations': num_valid_observations}
-    for name in ['full', 'var']:
+    for name in ['full', 'half', 'var', 'equal']:
         sorted_tw = np.sort(terminal_wealth[name])
         results[f'median_terminal_wealth_{name}'] = float(np.median(sorted_tw))
         results[f'mean_terminal_wealth_{name}'] = float(np.mean(sorted_tw))
@@ -416,7 +416,7 @@ def _write_kelly_refs(ref_dir, primary_results, checkpoints_values,
         alt_data = json.load(f)
 
     # Excess-return Sharpe contradicts this task's explicit raw-return contract.
-    alt_data['paths'] = [p for p in alt_data['paths'] if p['name'] != 'sharpe_excess']
+    alt_data['paths'] = [p for p in alt_data['paths'] if p['name'] == 'primary']
     alt_result_maps = {
         'primary': primary_results,
         'rf_compound': alt_rf,
@@ -824,6 +824,7 @@ def _write_regime_refs(ref_dir, primary, checkpoints_values, deliverable_keys, a
     # ── alt_paths.json ──
     with open(os.path.join(ref_dir, 'alt_paths.json')) as f:
         alt_data = json.load(f)
+    alt_data['paths'] = [p for p in alt_data['paths'] if p['name'] in ('primary', 'inv_vol_ddof0')]
     # Updated checkpoints from top-level (convention-independent)
     import copy
     updated_checkpoints = cp_data['checkpoints']
@@ -841,6 +842,9 @@ def _write_regime_refs(ref_dir, primary, checkpoints_values, deliverable_keys, a
             if key in path['checkpoints'] and key in result_map:
                 path['checkpoints'][key]['value'] = result_map[key]
     _write_json(os.path.join(ref_dir, 'alt_paths.json'), alt_data)
+    solution_dir = os.path.join(os.path.dirname(os.path.dirname(ref_dir)), 'solution')
+    _write_json(os.path.join(solution_dir, 'expected.json'), exp_data)
+    _write_json(os.path.join(solution_dir, 'checkpoints.json'), cp_data)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1515,6 +1519,7 @@ def _write_sentiment_refs(ref_dir, primary_results, checkpoints_values, alt_maps
     # ── alt_paths.json ──
     with open(os.path.join(ref_dir, 'alt_paths.json')) as f:
         alt_data = json.load(f)
+    alt_data['paths'] = [p for p in alt_data['paths'] if p['name'] in ('primary', 'ic_ir_ddof0')]
     # Updated checkpoints from top-level (convention-independent)
     import copy
     updated_checkpoints = cp_data['checkpoints']

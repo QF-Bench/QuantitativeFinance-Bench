@@ -45,7 +45,13 @@ counts all clean rows before this window is selected.
   "sharpe_full": <float>,
   "sharpe_var": <float>,
   "p50_drawdown_full": <float>,
-  "p50_drawdown_var": <float>
+  "p50_drawdown_var": <float>,
+  "median_terminal_wealth_half": <float>,
+  "median_terminal_wealth_equal": <float>,
+  "sharpe_half": <float>,
+  "sharpe_equal": <float>,
+  "p50_drawdown_half": <float>,
+  "p50_drawdown_equal": <float>
 }
 ```
 

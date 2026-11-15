@@ -121,7 +121,11 @@ Report intermediate checkpoints (used for partial scoring):
   volatility is the sample standard deviation times sqrt(252).
 - Annualisation factor: 252. Sharpe with zero risk-free rate, ddof=1.
 - Maximum drawdown: report as positive magnitude.
-- CVaR: historical simulation from trailing `cvar_window` returns.
-  Report as positive magnitude.
+- Historical VaR/CVaR use the trailing `cvar_window` strategy returns.
+  Compute the lower-tail percentile at `1-cvar_confidence` by linear
+  interpolation between adjacent ordered observations (NumPy's default
+  `method="linear"`). `portfolio_var_99` is minus that percentile.
+  `cvar` is minus the mean of observations at or below that percentile.
+  Report both as positive magnitudes.
 - VaR (portfolio_var_99): report as a positive magnitude, consistent
   with CVaR and max_drawdown.

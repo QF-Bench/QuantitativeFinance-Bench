@@ -85,6 +85,10 @@ Report intermediate checkpoints (used for partial scoring):
   percent returns). Require omega>0, alpha>=0, beta>=0 and
   persistence=alpha+beta<1 for the stationary fit used here, with
   `long_run_variance=omega/(1-persistence)`.
+- For reproducible calibration, initialize the GARCH recursion using either
+  the `arch` package's default exponentially weighted backcast or
+  `h[0]` equal to the population sample variance of the supplied returns.
+  Fit the same zero-mean Gaussian likelihood under the chosen initialization.
 - Use either the final fitted conditional standard deviation or the
   stationary long-run standard deviation, annualized by sqrt(252), as
   `garch_vol`. Use the same choice consistently throughout pricing and

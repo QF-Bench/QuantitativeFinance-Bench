@@ -84,12 +84,7 @@ def _resolve_path(data: dict, path: str) -> Any:
 
 
 def _norm_drawdown(name: str, agent_val: Any, ref_val: Any) -> tuple:
-    """Normalize drawdown sign — accept both positive and negative convention."""
-    if "drawdown" in name.lower():
-        if isinstance(agent_val, (int, float)):
-            agent_val = abs(agent_val)
-        if isinstance(ref_val, (int, float)):
-            ref_val = abs(ref_val)
+    """Preserve signs: this task explicitly requires positive loss magnitudes."""
     return agent_val, ref_val
 
 
@@ -250,6 +245,7 @@ def check_intermediates(
         }
     checkpoint_results = []
     matched_refs = set()
+    canonical_names = set(intermediates) & set(checkpoints_ref)
 
     # ── Label matching: agent term → reference checkpoint ──
     for term_name, entry in intermediates.items():
@@ -314,7 +310,7 @@ def check_intermediates(
             # No label match — try value matching against all unmatched refs
             value_matched_ref = None
             for ref_name, ref_cp in checkpoints_ref.items():
-                if ref_name in matched_refs:
+                if ref_name in matched_refs or ref_name in canonical_names:
                     continue
                 if agent_value is not None:
                     tol = ref_cp.get("tolerance", {"rtol": 1e-3})
@@ -364,7 +360,8 @@ def check_intermediates(
     # ── Coverage ──
     total_expected = len(checkpoints_ref)
     reported = sum(1 for r in checkpoint_results if r["status"] != "MISSING")
-    correct = sum(1 for r in checkpoint_results if r["status"] == "CORRECT")
+    correct = len({r.get("matched_as", r["term"]) for r in checkpoint_results
+                   if r["status"] == "CORRECT"})
 
     completeness = "COMPLETE" if all(
         r["status"] != "MISSING" for r in checkpoint_results
@@ -543,7 +540,7 @@ def write_outputs(
 
     cp_total = max(checks.get("total_expected", 0), 1)
     cp_correct = checks.get("correct", 0)
-    cp_frac = cp_correct / cp_total
+    cp_frac = min(cp_correct, cp_total) / cp_total
 
     reward = 0.5 * cc_frac + 0.5 * cp_frac
     (log_dir / "reward.txt").write_text(str(round(reward, 6)))
@@ -624,8 +621,8 @@ def validate_invariants(agent_outputs: dict, cc: dict, checks: dict,
     daily = value("alpha_daily")
     annual = value("alpha_annualized")
     if daily is not None and annual is not None:
-        target = (1 + daily) ** 252 - 1 if path_name == "alpha_compound" else 252 * daily
-        if not close(annual, target):
+        target = 252 * daily
+        if not close(annual, target, atol=1.27e-4):  # propagate six-decimal daily-alpha rounding
             reject(["alpha_daily", "alpha_annualized"], "Annualized alpha must agree with daily alpha and the selected convention.")
     if not errors:
         return
@@ -641,7 +638,9 @@ def validate_invariants(agent_outputs: dict, cc: dict, checks: dict,
             item["status"] = "INCORRECT"
             item["error_class"] = "domain_or_identity"
             item["invariant_error"] = errors[name]
-    checks["correct"] = sum(item["status"] == "CORRECT" for item in checks.get("results", []))
+    checks["correct"] = len({item.get("matched_as", item["term"])
+                             for item in checks.get("results", [])
+                             if item["status"] == "CORRECT"})
 
 
 def _score_path(cc: dict, checks: dict) -> int:
