@@ -194,10 +194,12 @@ def solve_kelly(returns_data=None):
     terminal_wealth = {name: np.zeros(n_paths) for name in schemes}
     all_daily_returns = {name: [] for name in schemes}
     max_drawdowns = {name: np.zeros(n_paths) for name in schemes}
+    asset_return_sums = {name: np.zeros(3) for name in schemes}
 
     for name, f in schemes.items():
         for p in range(n_paths):
             sim_returns = sim_rng.multivariate_normal(mu_hat, cov_hat, size=n_days)
+            asset_return_sums[name] += sim_returns.sum(axis=0)
             port_returns = rf_daily + (sim_returns - rf_daily) @ f  # self-financing
             all_daily_returns[name].extend(port_returns.tolist())
 
@@ -218,6 +220,7 @@ def solve_kelly(returns_data=None):
     # Conventional median averages the two central observations for even samples.
 
     results = {'num_valid_observations': num_valid_observations}
+    simulation_moments = {}
     for name in ['full', 'half', 'var', 'equal']:
         sorted_tw = np.sort(terminal_wealth[name])
         results[f'median_terminal_wealth_{name}'] = float(np.median(sorted_tw))
@@ -227,6 +230,11 @@ def solve_kelly(returns_data=None):
         all_r = np.array(all_daily_returns[name])
         sharpe = float(np.mean(all_r) / np.std(all_r, ddof=1) * math.sqrt(252))
         results[f'sharpe_{name}'] = sharpe
+        simulation_moments[name] = {
+            'asset_mean_returns': (asset_return_sums[name] / (n_paths*n_days)).tolist(),
+            'portfolio_mean_return': float(np.mean(all_r)),
+            'portfolio_return_std': float(np.std(all_r, ddof=1)),
+        }
 
         # p50 drawdown: median of max_drawdowns
         sorted_dd = np.sort(max_drawdowns[name])
@@ -309,7 +317,7 @@ def solve_kelly(returns_data=None):
     )
     # ── Write reference data ──
     _write_kelly_refs(ref_dir, results, checkpoints_values, alt_results_rf,
-                      alt_results_sharpe, alt_results_dd_neg, rf_checkpoints)
+                      alt_results_sharpe, alt_results_dd_neg, rf_checkpoints, simulation_moments)
 
     print(f"  -> Wrote reference data to {ref_dir}")
 
@@ -394,7 +402,7 @@ def _run_mc_schemes_sharpe_excess(schemes_dict, mu_hat, cov_hat, initial_capital
 
 
 def _write_kelly_refs(ref_dir, primary_results, checkpoints_values,
-                      alt_rf, alt_sharpe, alt_dd_neg, rf_checkpoints):
+                      alt_rf, alt_sharpe, alt_dd_neg, rf_checkpoints, simulation_moments):
     """Write all reference JSON files for kelly-var-sizing."""
 
     # ── checkpoints.json ──
@@ -442,6 +450,8 @@ def _write_kelly_refs(ref_dir, primary_results, checkpoints_values,
     solution_dir = os.path.join(os.path.dirname(os.path.dirname(ref_dir)), 'solution')
     _write_json(os.path.join(solution_dir, 'expected.json'), exp_data)
     _write_json(os.path.join(solution_dir, 'checkpoints.json'), cp_data)
+    _write_json(os.path.join(ref_dir, 'simulation_moments.json'), simulation_moments)
+    _write_json(os.path.join(solution_dir, 'simulation_moments.json'), simulation_moments)
 
 
 # ═══════════════════════════════════════════════════════════════════

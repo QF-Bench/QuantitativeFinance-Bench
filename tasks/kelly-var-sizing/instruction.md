@@ -79,6 +79,33 @@ Report intermediate checkpoints (used for partial scoring):
 }
 ```
 
+### `/app/output/simulation_moments.json`
+
+For each of `full`, `half`, `var`, and `equal`, report the following pooled
+moments from the **same simulated asset draws and portfolio returns** used
+for that scheme's wealth paths and reported Sharpe:
+
+```json
+{
+  "full": {
+    "asset_mean_returns": [<asset_0 mean>, <asset_1 mean>, <asset_2 mean>],
+    "portfolio_mean_return": <mean daily portfolio return>,
+    "portfolio_return_std": <sample standard deviation, ddof=1>
+  },
+  "half": {"asset_mean_returns": [<float>, <float>, <float>], "portfolio_mean_return": <float>, "portfolio_return_std": <float>},
+  "var": {"asset_mean_returns": [<float>, <float>, <float>], "portfolio_mean_return": <float>, "portfolio_return_std": <float>},
+  "equal": {"asset_mean_returns": [<float>, <float>, <float>], "portfolio_mean_return": <float>, "portfolio_return_std": <float>}
+}
+```
+
+Pool all `n_simulation_paths * n_days` observations per scheme. These are
+actual sample moments, not the estimation-window means or theoretical moments.
+Preserve at least **10 decimal places of absolute accuracy** in this file
+(full-precision JSON floats are suitable). Report Sharpe to at least six decimal
+places. This audit makes the residual-cash funding and raw-return Sharpe
+identities checkable without tightening Monte Carlo tolerances on wealth or
+drawdown.
+
 ## Conventions
 
 - Python 3.11+ with numpy, pandas, scipy available.
