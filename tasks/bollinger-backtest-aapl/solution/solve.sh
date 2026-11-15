@@ -206,6 +206,7 @@ def backtest_bollinger(df, initial_capital=INITIAL_CAPITAL):
 
         position = 0
         in_position = False
+        daily_portfolio[-1]["portfolio_value"] = capital
 
     final_capital = capital
 
@@ -246,7 +247,7 @@ def compute_intra_trade_drawdowns(df_orig, trade_analysis):
 # Metrics
 # ---------------------------------------------------------------
 def compute_metrics(port_df, trades, final_capital, initial_capital=INITIAL_CAPITAL):
-    daily_returns = port_df["daily_return"].values[1:]
+    daily_returns = port_df["daily_return"].values
     total_return = (final_capital - initial_capital) / initial_capital
     ann_return = float(np.mean(daily_returns) * 252)
     ann_vol = float(np.std(daily_returns, ddof=1) * np.sqrt(252))
@@ -274,7 +275,7 @@ def compute_metrics(port_df, trades, final_capital, initial_capital=INITIAL_CAPI
         "max_drawdown": round(max_dd, 6),
         "calmar_ratio": round(calmar, 6),
         "num_trades": n_trades,
-        "win_rate": round(win_rate, 4),
+        "win_rate": round(win_rate, 6),
         "total_pnl": round(total_pnl, 2),
         "num_trading_days": len(port_df),
     }

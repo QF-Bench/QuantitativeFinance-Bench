@@ -780,6 +780,17 @@ def test_rolling_betas_chart_nonzero():
     assert p.stat().st_size > 1000, "rolling_betas.png is too small / empty"
 
 
+def test_chart_files_are_readable_nonblank_pngs():
+    """Artifact validity; financial chart semantics also receive visual review."""
+    from PIL import Image
+    for name in ("factor_loadings.png", "alpha_chart.png", "r_squared_chart.png", "rolling_betas.png"):
+        with Image.open(OUTPUT_DIR / name) as chart:
+            assert chart.format == "PNG", name
+            pixels = np.asarray(chart.convert("RGB"))
+            assert pixels.shape[0] >= 2 and pixels.shape[1] >= 2, name
+            assert np.ptp(pixels.astype(float)) > 0 and np.any(pixels != pixels[0, 0]), name
+
+
 INPUT_DIR = Path("/app")
 
 

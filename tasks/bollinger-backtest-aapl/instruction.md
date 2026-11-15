@@ -114,7 +114,7 @@ Compute the following:
 **Daily return computation**: Track daily portfolio value. When flat (no
 position), portfolio value = cash. When in a position, portfolio value =
 cash + shares × adj_close. Compute daily returns as percentage change of
-portfolio value. The first day's return is 0.
+portfolio value. The first day's return is 0 and is included when computing the daily-return mean and sample standard deviation.
 
 **Cumulative return**: cumulative product of (1 + daily_return), starting
 at 1.0.
@@ -174,6 +174,12 @@ Create an interactive HTML chart using Plotly and save to:
 
     /app/output/cumulative_returns.html
 
+Embed the figure's JSON-serialized data and layout in a `Plotly.newPlot`
+or `Plotly.react` call; Plotly Python `write_html`/`to_html` does this
+automatically. Inline JSON and simple JSON-valued `const`, `let`, or `var`
+bindings are accepted. Runtime-only construction of chart data is outside
+this output format.
+
 The chart should show:
 - AAPL cumulative return curve
 - A horizontal reference line at 1.0 (break-even)
@@ -220,7 +226,7 @@ For each trade:
 - Use `numpy` for numerical computations
 - Use `plotly` for the interactive chart (it is pre-installed)
 - All monetary values rounded to 2 decimal places
-- All ratios/returns as raw floats (not percentages)
+- All ratios/returns as raw floats (not percentages), preserving at least six-decimal accuracy
 - The Bollinger Band window is 20 days with 2 standard deviations
 - Standard deviation uses ddof=1 (sample std)
 - Use adjusted prices throughout (adj_close for signals/valuation, adj_open for execution)
