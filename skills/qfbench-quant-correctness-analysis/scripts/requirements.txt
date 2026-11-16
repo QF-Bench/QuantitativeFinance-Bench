@@ -1,0 +1,3 @@
+# Offline preparation, manual import, aggregation and calibration use Python 3.10+ stdlib.
+# Optional provider adapter ONLY for separately authorized API use:
+# litellm

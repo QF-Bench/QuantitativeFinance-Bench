@@ -1,0 +1,4 @@
+interface:
+  display_name: "Quantitative Task Quality and Error Review"
+  short_description: "Review quant task quality, correctness and grading"
+  default_prompt: "Use $qfbench-quant-correctness-analysis to review this task's correctness and quality, including its assumptions, reference and grader where available. Separate minimum required fixes from optional improvements, and diagnose any submitted solution independently."

@@ -193,6 +193,8 @@ quantitativefinance-bench/
 ├── docker/
 │   ├── sandbox.Dockerfile          # Shared base image (Python, TA-Lib, …)
 │   └── requirements-sandbox.txt    # Pinned financial libraries
+├── skills/
+│   └── qfbench-quant-correctness-analysis/  # Reviewer quality/error analysis
 ├── docs/
 │   ├── task_contribution.md        # How to contribute a new task
 │   ├── debugging.md                # How to inspect and debug results
@@ -233,6 +235,18 @@ Every task directory must include:
 └── solution/
     └── solve.sh            # Reference ("oracle") solution
 ```
+
+## Reviewing Task Quality
+
+Use the [Quantitative Task Quality and Error Review skill](skills/qfbench-quant-correctness-analysis/SKILL.md)
+to audit task correctness, assumptions, quantitative substance, solvability and grading,
+or to diagnose a submitted solution. It supports standalone tasks without an existing
+agent run and separates minimum required fixes from optional improvements.
+
+The [task-review protocol](skills/qfbench-quant-correctness-analysis/references/task-review.md)
+records independent financial and numerical evidence, selected formal checks, blind
+interpretation, grader controls and remaining gaps. The package contains reviewer
+examples and reference analysis; keep it outside task containers and blind-solver inputs.
 
 ## Citation
 
