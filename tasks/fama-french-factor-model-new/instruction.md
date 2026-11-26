@@ -341,6 +341,10 @@ Save to `/app/output/results.json`:
 
 ### 11b. Regression Summary CSV
 
+For numeric CSV fields, retain at least the decimal precision specified for the
+corresponding JSON fields above; use at least six decimals for sector averages.
+Additional precision is accepted.
+
 Save to `/app/output/regression_summary.csv` with columns:
 
     ticker,alpha_annualized,beta_mkt,beta_smb,beta_hml,r_squared,adj_r_squared,t_stat_alpha,p_value_alpha,t_stat_alpha_nw,p_value_alpha_nw,durbin_watson,information_ratio,treynor_ratio

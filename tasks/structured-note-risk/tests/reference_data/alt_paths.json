@@ -7,7 +7,7 @@
       "deliverables": [
         {
           "name": "fair_value",
-          "value": 1035.35767798707,
+          "value": 1035.357620199831,
           "path": "results.json:fair_value",
           "tolerance": {
             "rtol": 0.02,
@@ -16,7 +16,7 @@
         },
         {
           "name": "markup_pct",
-          "value": -3.415020600012548,
+          "value": -3.4150152092382076,
           "path": "results.json:markup_pct",
           "tolerance": {
             "rtol": 0.05,
@@ -25,7 +25,7 @@
         },
         {
           "name": "note_var_99",
-          "value": 17.60037774602308,
+          "value": 17.600353965584148,
           "path": "results.json:note_var_99",
           "tolerance": {
             "rtol": 0.05,
@@ -34,7 +34,7 @@
         },
         {
           "name": "note_es_99",
-          "value": 46.90877705215862,
+          "value": 20.16410107690157,
           "path": "results.json:note_es_99",
           "tolerance": {
             "rtol": 0.05,
@@ -52,7 +52,7 @@
         },
         {
           "name": "garch_persistence",
-          "value": 0.9905182676032767,
+          "value": 0.9905180936676931,
           "path": "results.json:garch_persistence",
           "tolerance": {
             "rtol": 0.02
@@ -60,7 +60,7 @@
         },
         {
           "name": "long_run_variance",
-          "value": 0.00022335409590909982,
+          "value": 0.00022335320301520607,
           "path": "results.json:long_run_variance",
           "tolerance": {
             "rtol": 0.1
@@ -68,7 +68,7 @@
         },
         {
           "name": "garch_vol",
-          "value": 0.2586800935963609,
+          "value": 0.25867982508879794,
           "path": "results.json:garch_vol",
           "tolerance": {
             "rtol": 0.05
@@ -85,7 +85,7 @@
         },
         {
           "name": "option_unit_price",
-          "value": 2.8723811969778144,
+          "value": 2.872377122990316,
           "path": "results.json:option_unit_price",
           "tolerance": {
             "rtol": 0.02,
@@ -94,7 +94,7 @@
         },
         {
           "name": "option_value",
-          "value": 40.743124195678774,
+          "value": 40.74306640843981,
           "path": "results.json:option_value",
           "tolerance": {
             "rtol": 0.02,
@@ -111,7 +111,7 @@
         },
         {
           "name": "option_delta",
-          "value": 0.4220772133647326,
+          "value": 0.42207708119471127,
           "path": "results.json:option_delta",
           "tolerance": {
             "rtol": 0.02,
@@ -120,7 +120,7 @@
         },
         {
           "name": "note_delta",
-          "value": 5.986929709183071,
+          "value": 5.986927834425083,
           "path": "results.json:note_delta",
           "tolerance": {
             "rtol": 0.02,
@@ -130,7 +130,7 @@
       ],
       "checkpoints": {
         "garch_omega": {
-          "value": 2.117783767122164e-06,
+          "value": 2.117814150010921e-06,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -139,7 +139,7 @@
           "siblings": {}
         },
         "garch_alpha": {
-          "value": 0.015851259419804507,
+          "value": 0.0158513994520911,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -148,7 +148,7 @@
           "siblings": {}
         },
         "garch_beta": {
-          "value": 0.9746670081834722,
+          "value": 0.9746666942156019,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -157,7 +157,7 @@
           "siblings": {}
         },
         "garch_persistence": {
-          "value": 0.9905182676032767,
+          "value": 0.9905180936676931,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -166,7 +166,7 @@
           "siblings": {}
         },
         "long_run_variance": {
-          "value": 0.00022335409590909982,
+          "value": 0.00022335320301520607,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -175,7 +175,7 @@
           "siblings": {}
         },
         "garch_vol": {
-          "value": 0.2586800935963609,
+          "value": 0.25867982508879794,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -194,7 +194,7 @@
           "siblings": {}
         },
         "option_unit_price": {
-          "value": 2.8723811969778144,
+          "value": 2.872377122990316,
           "concept": "dv.barrier_option",
           "domain": "DV",
           "tolerance": {
@@ -204,7 +204,7 @@
           "siblings": {}
         },
         "option_value": {
-          "value": 40.743124195678774,
+          "value": 40.74306640843981,
           "concept": "dv.barrier_option",
           "domain": "DV",
           "tolerance": {
@@ -223,7 +223,7 @@
           "siblings": {}
         },
         "option_delta": {
-          "value": 0.4220772133647326,
+          "value": 0.42207708119471127,
           "concept": "dv.bsm_analytical",
           "domain": "DV",
           "tolerance": {
@@ -233,7 +233,7 @@
           "siblings": {}
         },
         "note_delta": {
-          "value": 5.986929709183071,
+          "value": 5.986927834425083,
           "concept": "",
           "domain": "DV",
           "tolerance": {
@@ -251,7 +251,7 @@
       "deliverables": [
         {
           "name": "fair_value",
-          "value": 1030.7579395911478,
+          "value": 1030.7578381550009,
           "path": "results.json:fair_value",
           "tolerance": {
             "rtol": 0.02,
@@ -260,7 +260,7 @@
         },
         {
           "name": "markup_pct",
-          "value": -2.9840119013148674,
+          "value": -2.98400235404037,
           "path": "results.json:markup_pct",
           "tolerance": {
             "rtol": 0.05,
@@ -269,7 +269,7 @@
         },
         {
           "name": "note_var_99",
-          "value": 15.710612026859659,
+          "value": 15.710570413172658,
           "path": "results.json:note_var_99",
           "tolerance": {
             "rtol": 0.05,
@@ -278,7 +278,7 @@
         },
         {
           "name": "note_es_99",
-          "value": 41.87214658432224,
+          "value": 17.99904311052182,
           "path": "results.json:note_es_99",
           "tolerance": {
             "rtol": 0.05,
@@ -296,7 +296,7 @@
         },
         {
           "name": "garch_persistence",
-          "value": 0.9905182676032767,
+          "value": 0.9905180936676931,
           "path": "results.json:garch_persistence",
           "tolerance": {
             "rtol": 0.02
@@ -304,7 +304,7 @@
         },
         {
           "name": "long_run_variance",
-          "value": 0.00022335409590909982,
+          "value": 0.00022335320301520607,
           "path": "results.json:long_run_variance",
           "tolerance": {
             "rtol": 0.1
@@ -312,7 +312,7 @@
         },
         {
           "name": "garch_vol",
-          "value": 0.2372450888197544,
+          "value": 0.2372446146065953,
           "path": "results.json:garch_vol",
           "tolerance": {
             "rtol": 0.05
@@ -329,7 +329,7 @@
         },
         {
           "name": "option_unit_price",
-          "value": 2.5481006627701497,
+          "value": 2.5480935115443475,
           "path": "results.json:option_unit_price",
           "tolerance": {
             "rtol": 0.02,
@@ -338,7 +338,7 @@
         },
         {
           "name": "option_value",
-          "value": 36.14338579975653,
+          "value": 36.143284363609645,
           "path": "results.json:option_value",
           "tolerance": {
             "rtol": 0.02,
@@ -355,7 +355,7 @@
         },
         {
           "name": "option_delta",
-          "value": 0.41079845355193073,
+          "value": 0.4107981865609143,
           "path": "results.json:option_delta",
           "tolerance": {
             "rtol": 0.02,
@@ -364,7 +364,7 @@
         },
         {
           "name": "note_delta",
-          "value": 5.826946795943799,
+          "value": 5.82694300882524,
           "path": "results.json:note_delta",
           "tolerance": {
             "rtol": 0.02,
@@ -374,7 +374,7 @@
       ],
       "checkpoints": {
         "garch_omega": {
-          "value": 2.117783767122164e-06,
+          "value": 2.117814150010921e-06,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -383,7 +383,7 @@
           "siblings": {}
         },
         "garch_alpha": {
-          "value": 0.015851259419804507,
+          "value": 0.0158513994520911,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -392,7 +392,7 @@
           "siblings": {}
         },
         "garch_beta": {
-          "value": 0.9746670081834722,
+          "value": 0.9746666942156019,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -401,7 +401,7 @@
           "siblings": {}
         },
         "garch_persistence": {
-          "value": 0.9905182676032767,
+          "value": 0.9905180936676931,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -410,7 +410,7 @@
           "siblings": {}
         },
         "long_run_variance": {
-          "value": 0.00022335409590909982,
+          "value": 0.00022335320301520607,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -419,7 +419,7 @@
           "siblings": {}
         },
         "garch_vol": {
-          "value": 0.2586800935963609,
+          "value": 0.2372446146065953,
           "concept": "vol.garch",
           "domain": "DV",
           "tolerance": {
@@ -438,7 +438,7 @@
           "siblings": {}
         },
         "option_unit_price": {
-          "value": 2.8723811969778144,
+          "value": 2.5480935115443475,
           "concept": "dv.barrier_option",
           "domain": "DV",
           "tolerance": {
@@ -448,7 +448,7 @@
           "siblings": {}
         },
         "option_value": {
-          "value": 40.743124195678774,
+          "value": 36.143284363609645,
           "concept": "dv.barrier_option",
           "domain": "DV",
           "tolerance": {
@@ -467,7 +467,7 @@
           "siblings": {}
         },
         "option_delta": {
-          "value": 0.4220772133647326,
+          "value": 0.4107981865609143,
           "concept": "dv.bsm_analytical",
           "domain": "DV",
           "tolerance": {
@@ -477,7 +477,495 @@
           "siblings": {}
         },
         "note_delta": {
-          "value": 5.986929709183071,
+          "value": 5.82694300882524,
+          "concept": "",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          },
+          "siblings": {}
+        }
+      }
+    },
+    {
+      "name": "sample_variance_initialization",
+      "description": "Zero-mean Gaussian GARCH with h0 equal to population sample variance; final conditional volatility",
+      "primary": false,
+      "deliverables": [
+        {
+          "name": "fair_value",
+          "value": 1035.9741982273795,
+          "path": "results.json:fair_value",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 1.0
+          }
+        },
+        {
+          "name": "markup_pct",
+          "value": -3.4724994395549342,
+          "path": "results.json:markup_pct",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "note_var_99",
+          "value": 17.853145610871,
+          "path": "results.json:note_var_99",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "note_es_99",
+          "value": 20.453715495846083,
+          "path": "results.json:note_es_99",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "breakeven_vol",
+          "value": 0.08266075008190174,
+          "path": "results.json:breakeven_vol",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "garch_persistence",
+          "value": 0.9896866303038125,
+          "path": "results.json:garch_persistence",
+          "tolerance": {
+            "rtol": 0.02
+          }
+        },
+        {
+          "name": "long_run_variance",
+          "value": 0.00024115214861510323,
+          "path": "results.json:long_run_variance",
+          "tolerance": {
+            "rtol": 0.1
+          }
+        },
+        {
+          "name": "garch_vol",
+          "value": 0.26154374158647253,
+          "path": "results.json:garch_vol",
+          "tolerance": {
+            "rtol": 0.05
+          }
+        },
+        {
+          "name": "bond_pv",
+          "value": 994.6145537913911,
+          "path": "results.json:bond_pv",
+          "tolerance": {
+            "rtol": 0.001,
+            "atol": 0.1
+          }
+        },
+        {
+          "name": "option_unit_price",
+          "value": 2.915845736842654,
+          "path": "results.json:option_unit_price",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          }
+        },
+        {
+          "name": "option_value",
+          "value": 41.35964443598825,
+          "path": "results.json:option_value",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "n_options",
+          "value": 14.184441897387014,
+          "path": "results.json:n_options",
+          "tolerance": {
+            "rtol": 0.001
+          }
+        },
+        {
+          "name": "option_delta",
+          "value": 0.4234511745571031,
+          "path": "results.json:option_delta",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "note_delta",
+          "value": 6.006418581885516,
+          "path": "results.json:note_delta",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          }
+        }
+      ],
+      "checkpoints": {
+        "garch_omega": {
+          "value": 2.4870912616974997e-06,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.15
+          },
+          "siblings": {}
+        },
+        "garch_alpha": {
+          "value": 0.020252244946869946,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.15
+          },
+          "siblings": {}
+        },
+        "garch_beta": {
+          "value": 0.9694343853569426,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.05
+          },
+          "siblings": {}
+        },
+        "garch_persistence": {
+          "value": 0.9896866303038125,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02
+          },
+          "siblings": {}
+        },
+        "long_run_variance": {
+          "value": 0.00024115214861510323,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.1
+          },
+          "siblings": {}
+        },
+        "garch_vol": {
+          "value": 0.26154374158647253,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.05
+          },
+          "siblings": {}
+        },
+        "bond_pv": {
+          "value": 994.6145537913911,
+          "concept": "",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.001,
+            "atol": 0.1
+          },
+          "siblings": {}
+        },
+        "option_unit_price": {
+          "value": 2.915845736842654,
+          "concept": "dv.barrier_option",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          },
+          "siblings": {}
+        },
+        "option_value": {
+          "value": 41.35964443598825,
+          "concept": "dv.barrier_option",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.5
+          },
+          "siblings": {}
+        },
+        "n_options": {
+          "value": 14.184441897387014,
+          "concept": "",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.001
+          },
+          "siblings": {}
+        },
+        "option_delta": {
+          "value": 0.4234511745571031,
+          "concept": "dv.bsm_analytical",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          },
+          "siblings": {}
+        },
+        "note_delta": {
+          "value": 6.006418581885516,
+          "concept": "",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          },
+          "siblings": {}
+        }
+      }
+    },
+    {
+      "name": "sample_variance_initialization_unconditional_vol",
+      "description": "Population sample-variance initialization and stationary long-run pricing volatility",
+      "primary": false,
+      "deliverables": [
+        {
+          "name": "fair_value",
+          "value": 1032.744006273097,
+          "path": "results.json:fair_value",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 1.0
+          }
+        },
+        {
+          "name": "markup_pct",
+          "value": -3.1705830364740253,
+          "path": "results.json:markup_pct",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "note_var_99",
+          "value": 16.524338898693593,
+          "path": "results.json:note_var_99",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "note_es_99",
+          "value": 18.93134879183524,
+          "path": "results.json:note_es_99",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "breakeven_vol",
+          "value": 0.08266075008190174,
+          "path": "results.json:breakeven_vol",
+          "tolerance": {
+            "rtol": 0.05,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "garch_persistence",
+          "value": 0.9896866303038125,
+          "path": "results.json:garch_persistence",
+          "tolerance": {
+            "rtol": 0.02
+          }
+        },
+        {
+          "name": "long_run_variance",
+          "value": 0.00024115214861510323,
+          "path": "results.json:long_run_variance",
+          "tolerance": {
+            "rtol": 0.1
+          }
+        },
+        {
+          "name": "garch_vol",
+          "value": 0.24651641213316003,
+          "path": "results.json:garch_vol",
+          "tolerance": {
+            "rtol": 0.05
+          }
+        },
+        {
+          "name": "bond_pv",
+          "value": 994.6145537913911,
+          "path": "results.json:bond_pv",
+          "tolerance": {
+            "rtol": 0.001,
+            "atol": 0.1
+          }
+        },
+        {
+          "name": "option_unit_price",
+          "value": 2.6881179222659464,
+          "path": "results.json:option_unit_price",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          }
+        },
+        {
+          "name": "option_value",
+          "value": 38.12945248170602,
+          "path": "results.json:option_value",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.5
+          }
+        },
+        {
+          "name": "n_options",
+          "value": 14.184441897387014,
+          "path": "results.json:n_options",
+          "tolerance": {
+            "rtol": 0.001
+          }
+        },
+        {
+          "name": "option_delta",
+          "value": 0.4158255610751501,
+          "path": "results.json:option_delta",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          }
+        },
+        {
+          "name": "note_delta",
+          "value": 5.898253510518822,
+          "path": "results.json:note_delta",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          }
+        }
+      ],
+      "checkpoints": {
+        "garch_omega": {
+          "value": 2.4870912616974997e-06,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.15
+          },
+          "siblings": {}
+        },
+        "garch_alpha": {
+          "value": 0.020252244946869946,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.15
+          },
+          "siblings": {}
+        },
+        "garch_beta": {
+          "value": 0.9694343853569426,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.05
+          },
+          "siblings": {}
+        },
+        "garch_persistence": {
+          "value": 0.9896866303038125,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02
+          },
+          "siblings": {}
+        },
+        "long_run_variance": {
+          "value": 0.00024115214861510323,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.1
+          },
+          "siblings": {}
+        },
+        "garch_vol": {
+          "value": 0.24651641213316003,
+          "concept": "vol.garch",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.05
+          },
+          "siblings": {}
+        },
+        "bond_pv": {
+          "value": 994.6145537913911,
+          "concept": "",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.001,
+            "atol": 0.1
+          },
+          "siblings": {}
+        },
+        "option_unit_price": {
+          "value": 2.6881179222659464,
+          "concept": "dv.barrier_option",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.1
+          },
+          "siblings": {}
+        },
+        "option_value": {
+          "value": 38.12945248170602,
+          "concept": "dv.barrier_option",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.5
+          },
+          "siblings": {}
+        },
+        "n_options": {
+          "value": 14.184441897387014,
+          "concept": "",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.001
+          },
+          "siblings": {}
+        },
+        "option_delta": {
+          "value": 0.4158255610751501,
+          "concept": "dv.bsm_analytical",
+          "domain": "DV",
+          "tolerance": {
+            "rtol": 0.02,
+            "atol": 0.01
+          },
+          "siblings": {}
+        },
+        "note_delta": {
+          "value": 5.898253510518822,
           "concept": "",
           "domain": "DV",
           "tolerance": {

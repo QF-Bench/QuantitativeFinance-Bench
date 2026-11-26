@@ -41,6 +41,8 @@ for name, info in checkpoints["checkpoints"].items():
     intermediates[name] = {"value": info["value"]}
 solution = {"intermediates": intermediates}
 write_json(os.path.join(OUT_DIR, "solution.json"), solution)
+write_json(os.path.join(OUT_DIR, "simulation_moments.json"),
+           load_json(os.path.join(REF_DIR, "simulation_moments.json")))
 
 print("Oracle solve complete.")
 PYEOF

@@ -11,20 +11,18 @@
   "deliverables": [
     {
       "name": "dynamic_sharpe_ratio",
-      "value": 0.4077251801017406,
+      "value": 0.5234755605086531,
       "path": "results.json:dynamic_sharpe_ratio",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.02
+        "atol": 0.002
       }
     },
     {
       "name": "sharpe_improvement",
-      "value": 0.009788224415087865,
+      "value": 0.12538047369885597,
       "path": "results.json:sharpe_improvement",
       "tolerance": {
-        "rtol": 0.1,
-        "atol": 0.02
+        "atol": 0.002
       }
     },
     {
@@ -32,18 +30,29 @@
       "value": 0.30023828435266087,
       "path": "results.json:regime_frac_high",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "atol": 1e-05
       }
     },
     {
       "name": "composite_vol_mean",
-      "value": 0.23441450549807896,
+      "value": 0.2344150897627013,
       "path": "results.json:composite_vol_mean",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.002
       }
     }
-  ]
+  ],
+  "parameters": {
+    "fast_ema": 32,
+    "slow_ema": 64,
+    "vol_lookback": 40,
+    "vol_target": 0.15,
+    "max_leverage_per_asset": 1.0,
+    "risk_free_annual": 0.01,
+    "n_assets": 5,
+    "regime_lo_pct": 30,
+    "regime_hi_pct": 70,
+    "scale_low_vol": 1.25,
+    "scale_high_vol": 0.4
+  }
 }

@@ -12,39 +12,46 @@
   "deliverables": [
     {
       "name": "portfolio_var",
-      "value": 216.47688127607594,
+      "value": 175.033382021717,
       "path": "results.json:portfolio_var",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.1
+        "rtol": 0.002
       }
     },
     {
       "name": "delta_var_pct",
-      "value": 64.84502770023487,
+      "value": 97.85790629685991,
       "path": "results.json:delta_var_pct",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 1.0
+        "atol": 0.05
       }
     },
     {
       "name": "gamma_var_pct",
-      "value": 0.2969718756979214,
+      "value": 0.16557690961583343,
       "path": "results.json:gamma_var_pct",
       "tolerance": {
-        "rtol": 0.1,
-        "atol": 1.0
+        "atol": 0.005
       }
     },
     {
       "name": "vega_var_pct",
-      "value": 34.85800042406721,
+      "value": 1.9765167935242682,
       "path": "results.json:vega_var_pct",
       "tolerance": {
-        "rtol": 0.1,
-        "atol": 1.0
+        "atol": 0.05
       }
     }
-  ]
+  ],
+  "parameters": {
+    "S0": 155.09951085246948,
+    "K": 152.0,
+    "B": 111.05,
+    "r": 0.0121,
+    "T": 0.5,
+    "confidence_level": 0.99,
+    "n_contracts": 50,
+    "fd_dS_pct": 0.01,
+    "fd_dsigma": 0.01
+  }
 }

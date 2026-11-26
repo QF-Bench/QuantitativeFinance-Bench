@@ -5,8 +5,8 @@
       "concept": "stats.descriptive",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.02,
-        "atol": 1e-06
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -15,8 +15,8 @@
       "concept": "stats.descriptive",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.02,
-        "atol": 1e-06
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -25,8 +25,8 @@
       "concept": "stats.descriptive",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.02,
-        "atol": 1e-06
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -35,7 +35,8 @@
       "concept": "stats.covariance",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.02
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -44,7 +45,8 @@
       "concept": "stats.covariance",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.05
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -53,7 +55,8 @@
       "concept": "stats.covariance",
       "domain": "STAT",
       "tolerance": {
-        "rtol": 0.05
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -62,7 +65,8 @@
       "concept": "pm.kelly_criterion",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.05
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -71,7 +75,8 @@
       "concept": "pm.kelly_criterion",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.05
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -80,7 +85,8 @@
       "concept": "pm.kelly_criterion",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.05
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -89,8 +95,8 @@
       "concept": "pm.kelly_criterion",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -99,8 +105,8 @@
       "concept": "risk.var",
       "domain": "RISK",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -109,18 +115,17 @@
       "concept": "risk.var",
       "domain": "RISK",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.01
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
     "mean_terminal_wealth_full": {
-      "value": 1220051.4531033468,
+      "value": 1236309.5449067529,
       "concept": "mc.simulation",
       "domain": "SIM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 1000
+        "rtol": 0.025
       },
       "siblings": {}
     }

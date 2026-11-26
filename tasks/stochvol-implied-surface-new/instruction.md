@@ -65,9 +65,10 @@ following methods:
 
 **Compare the two methods** by pricing options at the shortest maturity ($T = 1/12$) across all
 12 strikes. Compute the absolute price difference between the two methods at each strike.
-**Choose the method where all price differences are below $10^{-5}$**, or if neither satisfies
-this, choose the method with the smaller maximum absolute difference. Use the chosen method
-for all subsequent computations.
+**Choose `scipy_quad` if the maximum pairwise absolute price difference is strictly
+below $10^{-5}$; otherwise choose `gauss_legendre`.** The latter uses the wider
+integration interval and is the prescribed fallback for this task. Use the chosen
+method for all subsequent computations.
 
 Save the comparison results to `/app/output/integration_comparison.csv` with columns:
 `K`, `T`, `price_quad`, `price_gl`, `abs_diff`. The file should have exactly 12 data rows
@@ -95,9 +96,9 @@ Compute put prices two ways:
 Compute the absolute difference between the direct and parity-derived put prices at every
 $(K, T)$ grid point. All differences must be below $10^{-6}$.
 
-### Step 5: Dupire Local Volatility Surface
+### Step 5: Coarse-Grid Dupire Diagnostic
 
-From the call option price surface $C(K, T)$, compute the **Dupire local volatility** at
+From the call option price surface $C(K, T)$, compute the **coarse-grid Dupire diagnostic** at
 interior strike grid points (excluding the boundary strikes $K[0]$ and $K[11]$, where the
 second strike derivative is undefined). The output is a $10 \times 12$ matrix.
 
@@ -108,6 +109,14 @@ interior points.
 
 If the denominator is less than $10^{-15}$, set the local vol to NaN at that point. Otherwise,
 floor $\sigma_{\text{local}}^2$ at $10^{-10}$ before taking the square root.
+
+This step is an educational finite-difference diagnostic of the supplied discrete price
+grid, not a convergence-verified estimate of the continuous model's local volatility.
+On this coarse grid, especially at short maturities and wing strikes, one-sided time
+differences and small strike curvature can cause material bias. The local-volatility
+CSV, plot, and summary fields below report this discrete estimator; they are not
+suitable for calibrated local-volatility pricing without grid refinement and
+convergence checks.
 
 ### Step 6: Save Outputs
 
@@ -138,11 +147,11 @@ Save all results to `/app/output/`:
 7. **`put_parity_check.csv`** — 144 rows (one per grid point), with columns:
    `K`, `T`, `put_direct`, `put_parity`, `abs_diff`.
 
-8. **`local_vol_surface.csv`** — 10×12 matrix of Dupire local volatilities. Rows are the
+8. **`local_vol_surface.csv`** — 10×12 matrix of the coarse-grid Dupire diagnostic. Rows are the
    10 **interior** strikes $K[1] \ldots K[10]$ (ascending), columns are all 12 maturities
    (ascending). Include `K` and `T` headers.
 
-9. **`local_vol_surface.png`** — 3D surface plot of the local volatility surface.
+9. **`local_vol_surface.png`** — 3D surface plot of the coarse-grid Dupire diagnostic.
 
 10. **`summary.json`** — JSON file containing:
     ```json

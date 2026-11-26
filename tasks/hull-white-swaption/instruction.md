@@ -64,6 +64,11 @@ Load market data from `/app/market_data.json`.
 
 ### Step 1: Build the Initial Yield Curve
 
+Set $P(0,0)=1$ and interpolate **linearly in log discount factors** between the
+input maturities. Beyond the final knot continue the final log-discount slope.
+Use the right-hand instantaneous forward at each knot (and the final interval's
+forward at and beyond the last knot).
+
 ### Step 2: Hull-White Zero-Coupon Bond Pricing
 
 Recall that the Hull-White model is an affine model.
@@ -77,6 +82,10 @@ Recall that the Hull-White model is an affine model.
 Find $(a, \sigma)$ that minimize the sum of squared errors between model and market caplet prices.
 
 Use `scipy.optimize.minimize` with method `'L-BFGS-B'`, bounds $a \in [0.001, 1.0]$, $\sigma \in [0.001, 0.10]$, and initial guess $a_0 = 0.10$, $\sigma_0 = 0.015$.
+
+Scale the objective to squared basis points (multiply each price residual by
+10000 before squaring), or use equivalent tolerances that actually converge to
+the minimum. Check optimizer convergence and achieve RMSE below 0.01 bp.
 
 Report the RMSE in basis points:
 
@@ -105,6 +114,11 @@ Build a trinomial tree for the short rate in two stages.
 - Time step: $\Delta t = 1/12$
 - Space step: $\Delta x = \sigma \sqrt{3 \Delta t}$
 - Maximum node index: $j_{\max} = \lceil 0.184 / (a \cdot \Delta t) \rceil$, minimum 1
+
+Interior targets are $(j+1,j,j-1)$; at the upper boundary use $(j,j-1,j-2)$,
+and at the lower boundary use $(j+2,j+1,j)$. Choose nonnegative probabilities
+summing to one with mean node-index increment $-aj\Delta t$ and variance $1/3$.
+Verify these moments and nonnegative Arrow-Debreu state prices.
 
 **Stage 2: Arrow-Debreu calibration**
 
@@ -160,11 +174,16 @@ $$\text{exercise}(t_k, j) = \max(1 - \text{CB}_{\text{remain}}(t_k, r_j),\; 0)$$
 
 **Exercise boundary**: At each exercise date $t_k$, find the smallest $j$ (lowest rate node) where exercise is preferred over continuation. Record $j^*$ and $r^* = \alpha_{n_k} + j^* \cdot \Delta x$.
 
-The exercise boundary $j^*$ should be **weakly decreasing** over time: as maturity approaches, the exercise threshold drops because there are fewer remaining cash flows.
+Require strictly positive exercise value when identifying the boundary. There is
+no general monotonicity requirement on $j^*$ because the shift $\alpha_n$ varies
+with the initial curve. At the last exercise date continuation is zero.
 
 ### Step 9: Compute DV01
 
-For each swaption, bump the yield curve by +1bp; Rebuild the tree and reprice. DV01 = (bumped price - base price) × 10000 bps/bp.
+For each European swaption use $P_{bump}(0,t)=P(0,t)e^{-0.0001t}$ throughout:
+rebuild the tree **and** use the bumped curve/forward in every analytic exercise
+bond price. Keep calibrated $(a,\sigma)$ and the original ATM contract strike
+fixed. DV01 = (bumped tree price - base tree price) × 10000 bps/bp.
 
 ### Step 10: Save Outputs
 
@@ -174,7 +193,7 @@ Save all results to the output directory (environment variable `OUTPUT_DIR`, def
 
 2. **`swaption_prices.json`** — For each swaption key (`1Yx5Y`, `2Yx3Y`, `5Yx5Y`): `expiry`, `tenor`, `atm_rate`, `r_star`, `analytical_price`, `analytical_bps`, `tree_price`, `tree_bps`, `tree_analytical_diff_bps`, `dv01_bps_per_bp`, and `payment_dates`.
 
-3. **`yield_curve.csv`** — Columns: `maturity`, `discount_factor`, `zero_rate`, `forward_rate`.
+3. **`yield_curve.csv`** — Exactly eight rows, the input maturities in ascending order (exclude $t=0$). Columns: `maturity`, `discount_factor`, `zero_rate`, `forward_rate`.
 
 4. **`tree_diagnostics.csv`** — Columns: `maturity`, `zcb_tree`, `zcb_market`, `abs_diff`.
 
@@ -183,6 +202,16 @@ Save all results to the output directory (environment variable `OUTPUT_DIR`, def
 6. **`bermudan_prices.json`** — For each swaption key (`1Yx5Y`, `2Yx3Y`, `5Yx5Y`): `european_tree_bps`, `bermudan_bps`, `premium_bps`, `premium_pct`, and `exercise_boundary` array with `date`, `j_star`, `r_star` per exercise date.
 
 7. **`summary.json`** — Consistency flags: `calibration_rmse_bps`, `calibration_rmse_ok`, `params_in_range`, `a`, `sigma`, `tree_zcb_match_market`, `tree_vs_jamshidian_ok`, `dv01_positive`, `bermudan_geq_european`, `bermudan_premium_positive`, `all_checks_passed`.
+
+`tree_analytical_diff_bps` is the **absolute** tree-minus-analytical price
+difference times 10000. Derive all summary flags from the unrounded results:
+`calibration_rmse_ok`: RMSE < 0.01 bp; `params_in_range`: the inclusive calibration
+bounds; `tree_zcb_match_market`: all input-maturity errors < $10^{-6}$;
+`tree_vs_jamshidian_ok`: all absolute differences < 3 bps;
+`dv01_positive`: every DV01 > 0; `bermudan_geq_european`: each Bermudan price at
+least its European tree price (allow $10^{-6}$ bp roundoff);
+`bermudan_premium_positive`: every premium > 0. `all_checks_passed` is their
+logical AND. Report prices/diagnostics with enough precision to verify these checks.
 
 ## Critical Implementation Notes
 

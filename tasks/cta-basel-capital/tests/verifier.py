@@ -30,9 +30,7 @@ from typing import Any
 
 def _check_scalar(actual: float, expected: float, tol: dict) -> bool:
     """Check scalar within tolerance."""
-    if math.isnan(expected):
-        return math.isnan(actual)  # NaN matches NaN
-    if math.isnan(actual):
+    if not math.isfinite(expected) or not math.isfinite(actual):
         return False
     if expected == 0:
         if actual == 0:
@@ -314,7 +312,9 @@ def check_intermediates(
             # No label match — try value matching against all unmatched refs
             value_matched_ref = None
             for ref_name, ref_cp in checkpoints_ref.items():
-                if ref_name in matched_refs:
+                # A supplied canonical field owns its checkpoint, even when wrong.
+                # A value alias must not replace it or manufacture correctness credit.
+                if ref_name in matched_refs or ref_name in intermediates:
                     continue
                 if agent_value is not None:
                     tol = ref_cp.get("tolerance", {"rtol": 1e-3})
@@ -364,7 +364,10 @@ def check_intermediates(
     # ── Coverage ──
     total_expected = len(checkpoints_ref)
     reported = sum(1 for r in checkpoint_results if r["status"] != "MISSING")
-    correct = sum(1 for r in checkpoint_results if r["status"] == "CORRECT")
+    # Value aliases and canonical labels represent the same checkpoint.
+    # Count each reference identity once so extra metadata cannot inflate reward.
+    correct = len({r.get("matched_as", r["term"]) for r in checkpoint_results
+                   if r["status"] == "CORRECT"})
 
     completeness = "COMPLETE" if all(
         r["status"] != "MISSING" for r in checkpoint_results
@@ -582,6 +585,84 @@ def write_outputs(
 # Main entry point
 # ══════════════════════════════════════════════════════════════════════
 
+def _apply_task_checks(agent_outputs, cc, checks, ref):
+    """Validate the required named fields and identities, preserving partial credit.
+
+    Accept nested/flat checkpoint numbers and the existing results fallback.
+    Cross-checks tolerate output rounding; they do not demand bitwise fits.
+    """
+    results = agent_outputs.get('results.json')
+    results = results if isinstance(results, dict) else {}
+    solution = agent_outputs.get('solution.json')
+    intermediates = solution.get('intermediates') if isinstance(solution, dict) else None
+    intermediates = intermediates if isinstance(intermediates, dict) else results
+    cp_names = ref['checkpoints'].get('checkpoints', {})
+    names = [d['name'] for d in ref['expected']['deliverables']] + list(cp_names)
+    values, errors = {}, {}
+    def fail(names, detail):
+        for name in names:
+            errors[name] = detail
+    for name in names:
+        value = (intermediates if name in cp_names else results).get(name)
+        if isinstance(value, dict):
+            value = value.get('value')
+        try:
+            if isinstance(value, bool):
+                raise ValueError('boolean is not a measurement')
+            value = float(value)
+            if not math.isfinite(value):
+                raise ValueError('nonfinite measurement')
+            values[name] = value
+        except (TypeError, ValueError, OverflowError):
+            fail([name], 'Required named finite numeric value is missing or invalid')
+    def ready(*names):
+        return all(name in values for name in names)
+    def identity(lhs, rhs, fields, rel=1e-4, absolute=1e-5):
+        if not math.isclose(lhs, rhs, rel_tol=rel, abs_tol=absolute):
+            fail(fields, 'Reported values violate the specified mathematical identity')
+    v = values
+    params = ref["expected"]["parameters"]
+    if ready('garch_omega', 'garch_alpha', 'garch_beta', 'garch_persistence', 'long_run_variance'):
+        o, a, b, persistence, lr = (v[k] for k in ['garch_omega', 'garch_alpha', 'garch_beta', 'garch_persistence', 'long_run_variance'])
+        if not (o > 0 and a >= 0 and b >= 0 and 0 <= persistence < 1 and lr > 0):
+            fail(['garch_omega', 'garch_alpha', 'garch_beta', 'garch_persistence', 'long_run_variance'], 'Stationary nonnegative-variance GARCH domain violated')
+        identity(persistence, a+b, ['garch_persistence'], absolute=1e-5)
+        identity(lr*(1-persistence), o, ['long_run_variance'], rel=0.005, absolute=1e-10)
+    if ready('capital_charge', 'var_component', 'svar_component'):
+        identity(v['capital_charge'], v['var_component']+v['svar_component'], ['capital_charge'])
+    for result, component in [('var_99', 'var_component'), ('stressed_var', 'svar_component')]:
+        if ready(result, component):
+            identity(v[component], params["basel_multiplier"]*v[result], [component])
+            if v[result] <= 0:
+                fail([result], 'Risk must be positive')
+    if ready('annualized_return', 'annualized_volatility', 'sharpe_ratio'):
+        identity(v['sharpe_ratio']*v['annualized_volatility'],
+                 v['annualized_return']-params['risk_free_annual'], ['sharpe_ratio'])
+    if ready('annualized_return', 'max_drawdown', 'calmar_ratio'):
+        dd = abs(v['max_drawdown'])
+        if not 0 < dd < 1:
+            fail(['max_drawdown'], 'Nonzero drawdown magnitude must be in (0, 1)')
+        identity(v['calmar_ratio']*dd, v['annualized_return'], ['calmar_ratio'])
+    if ready('annualized_volatility') and v['annualized_volatility'] <= 0:
+        fail(['annualized_volatility'], 'Volatility must be positive')
+    for result in cc.get('deliverables', []):
+        if result['name'] in errors:
+            result['status'] = 'FAIL'
+            result['semantic_error'] = errors[result['name']]
+    if any(r['status'] != 'PASS' for r in cc.get('deliverables', [])):
+        cc['status'] = 'FAIL'
+    for result in checks.get('results', []):
+        name = result.get('matched_as', result['term'])
+        if name in errors:
+            result['status'] = 'INCORRECT'
+            result['error_class'] = 'semantic'
+            result['semantic_error'] = errors[name]
+    checks['correct'] = len({r.get('matched_as', r['term'])
+                             for r in checks.get('results', [])
+                             if r['status'] == 'CORRECT'})
+    checks['structure']['semantic_errors'] = errors
+
+
 def _score_path(cc: dict, checks: dict) -> int:
     """Score a verification result for path ranking.
 
@@ -610,6 +691,10 @@ def run_verification(
     agent_outputs = load_agent_outputs(output_dir)
     ref = load_reference(ref_dir)
     solution = agent_outputs.get("solution.json")
+    if not isinstance(solution, dict):
+        solution = None
+    elif "intermediates" in solution and not isinstance(solution["intermediates"], dict):
+        solution = None
 
     if task_meta is None:
         task_meta = ref["expected"].get("meta", {})
@@ -655,6 +740,9 @@ def run_verification(
         cc = check_cc(agent_outputs, ref["expected"])
         checks = check_intermediates(solution, ref, agent_outputs)
         matched_path_name = None
+
+    # Enforce model domains and cross-field identities before scoring.
+    _apply_task_checks(agent_outputs, cc, checks, ref)
 
     # Phase D: Classify
     classification = classify(cc, checks)

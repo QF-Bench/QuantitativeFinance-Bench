@@ -133,7 +133,6 @@ print("Comparing integration methods at T = 1/12 ...")
 T_test = T_vec[0]  # 1/12
 comparison_rows = []
 max_diff_quad = 0.0
-max_diff_gl = 0.0
 
 for K in K_vec:
     p_quad = cz_call_quad(S0, K, r, T_test, q)
@@ -144,11 +143,10 @@ for K in K_vec:
         "price_quad": p_quad, "price_gl": p_gl,
         "abs_diff": diff
     })
-    # Track max diff — use GL as reference since it's more stable
+    # Track the single pairwise maximum for the prescribed selection rule
     max_diff_quad = max(max_diff_quad, diff)
 
-# Decision: choose method where all diffs < 1e-5
-# Since we compare against each other, we check if quad matches GL within 1e-5
+# Prescribed rule: quad if both agree within 1e-5; otherwise wider-interval GL.
 quad_ok = max_diff_quad < 1e-5
 
 if quad_ok:

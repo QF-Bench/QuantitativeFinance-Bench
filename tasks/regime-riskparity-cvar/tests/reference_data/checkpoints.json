@@ -14,7 +14,8 @@
       "concept": "rmt.marchenko_pastur",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.001
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -23,8 +24,8 @@
       "concept": "rmt.absorption_ratio",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.02,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -33,8 +34,8 @@
       "concept": "rmt.absorption_ratio",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.002,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -43,7 +44,8 @@
       "concept": "rmt.eigenvalue",
       "domain": "CQF",
       "tolerance": {
-        "rtol": 0.02
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -52,7 +54,7 @@
       "concept": "rmt.regime_detection",
       "domain": "CQF",
       "tolerance": {
-        "atol": 2
+        "atol": 0
       },
       "siblings": {}
     },
@@ -61,7 +63,7 @@
       "concept": "rmt.regime_detection",
       "domain": "CQF",
       "tolerance": {
-        "atol": 2
+        "atol": 0
       },
       "siblings": {}
     },
@@ -70,7 +72,7 @@
       "concept": "rmt.regime_detection",
       "domain": "CQF",
       "tolerance": {
-        "atol": 2
+        "atol": 0
       },
       "siblings": {}
     },
@@ -79,7 +81,7 @@
       "concept": "pm.rebalancing",
       "domain": "PM",
       "tolerance": {
-        "atol": 1
+        "atol": 0
       },
       "siblings": {}
     },
@@ -88,8 +90,8 @@
       "concept": "pm.risk_parity",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -98,8 +100,8 @@
       "concept": "risk.var",
       "domain": "RISK",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -108,8 +110,8 @@
       "concept": "risk.cvar",
       "domain": "RISK",
       "tolerance": {
-        "rtol": 0.05,
-        "atol": 0.005
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     },
@@ -118,8 +120,8 @@
       "concept": "pm.performance_metrics",
       "domain": "PM",
       "tolerance": {
-        "rtol": 0.02,
-        "atol": 0.01
+        "rtol": 0.001,
+        "atol": 5.1e-07
       },
       "siblings": {}
     }

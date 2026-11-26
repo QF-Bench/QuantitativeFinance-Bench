@@ -14,7 +14,7 @@ import sys
 import numpy as np
 import pandas as pd
 from arch import arch_model
-from scipy.optimize import brentq
+from scipy.optimize import brentq, minimize
 from scipy.stats import norm
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -25,40 +25,48 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 # ═══════════════════════════════════════════════════════════════════
 
 def fit_garch_arch(returns):
-    """Fit GARCH(1,1) using the arch library.
+    """Stable zero-mean Gaussian fit; report decimal-return-squared units.
 
-    Args:
-        returns: 1-D array of decimal log-returns
-
-    Returns:
-        dict with omega, alpha, beta (decimal scale), persistence,
-        long_run_variance, conditional variance series (decimal scale)
+    Use arch's default backcast and bounds. Independent starts reduce the
+    chance that nominal optimizer convergence leaves a poor local solution.
+    Boundary rolling fits have no finite long-run variance.
     """
-    returns_arr = np.asarray(returns, dtype=float).ravel()
-    returns_pct = returns_arr * 100.0
-    am = arch_model(returns_pct, vol='Garch', p=1, q=1, mean='Zero', dist='normal')
-    res = am.fit(disp='off')
-
-    omega = res.params['omega'] / 10000.0
-    alpha = res.params['alpha[1]']
-    beta = res.params['beta[1]']
+    import warnings
+    x = np.asarray(returns, dtype=float).ravel()
+    y = 100.0 * x
+    model = arch_model(y, vol='GARCH', p=1, q=1, mean='Zero',
+                       dist='normal', rescale=False)
+    scale = float(np.mean(y ** 2))
+    starts = [None, [0.1 * scale, 0.1, 0.8], [0.01 * scale, 0.05, 0.94]]
+    fits = []
+    for start in starts:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            result = model.fit(disp='off', update_freq=0, starting_values=start,
+                               options={'ftol': 1e-10, 'maxiter': 2000})
+        if result.convergence_flag == 0 and np.isfinite(result.loglikelihood):
+            fits.append(result)
+    if not fits:
+        raise RuntimeError('No converged GARCH fit')
+    result = max(fits, key=lambda f: f.loglikelihood)
+    omega = float(result.params['omega']) / 10000.0
+    alpha = float(result.params['alpha[1]'])
+    beta = float(result.params['beta[1]'])
     persistence = alpha + beta
-
-    # Fallback to sample variance when IGARCH (persistence >= 1)
-    if persistence < 1.0:
-        long_run_var = omega / (1.0 - persistence)
-    else:
-        long_run_var = float(np.var(returns_arr, ddof=1))
-
-    cond_var = (res.conditional_volatility ** 2) / 10000.0  # decimal scale
-
+    cond_var = np.asarray(result.conditional_volatility) ** 2 / 10000.0
+    if not (omega > 0 and alpha >= 0 and beta >= 0 and persistence <= 1 + 1e-8
+            and np.all(np.isfinite(cond_var)) and np.all(cond_var > 0)):
+        raise RuntimeError('Invalid GARCH fit')
     return {
-        'omega': float(omega),
-        'alpha': float(alpha),
-        'beta': float(beta),
-        'persistence': float(persistence),
-        'long_run_variance': float(long_run_var),
-        'cond_var': np.asarray(cond_var),
+        'omega': omega, 'alpha': alpha, 'beta': beta,
+        'persistence': persistence,
+        'long_run_variance': omega / (1 - persistence) if persistence < 1 else None,
+        'cond_var': cond_var,
+        'h_next': omega + alpha * x[-1] ** 2 + beta * cond_var[-1],
+        'loglikelihood': float(result.loglikelihood + len(x) * math.log(100)),
+        'converged_starts': len(fits),
+        'likelihood_spread': float(max(f.loglikelihood for f in fits)
+                                   - min(f.loglikelihood for f in fits)),
     }
 
 
@@ -110,61 +118,44 @@ def sma_seeded_ema(prices_col, span):
 
 
 def run_cta_strategy(prices, returns, fast_span, slow_span, vol_lookback,
-                     vol_targets, max_lev, n_assets, rf_annual, annualization=252):
-    """EMA-crossover CTA with vol-targeted sizing. Returns perf dict."""
-    n_days_p = prices.shape[0]
-    n_ret = returns.shape[0]
+                     vol_targets, max_lev, n_assets, rf_annual, annualization=252,
+                     drop_warmup=False, geometric_return=False, ddof=1):
+    """One price-date weight lag; a weighted-log-return strategy proxy.
 
-    signal = np.zeros((n_days_p, n_assets))
+    returns[k] ends on price date k+1. Targets[k], the EWMA[k], and the
+    price-date k+1 signal form that close's weight, executed on return k+1.
+    """
+    signals = np.zeros_like(prices, dtype=float)
     for i in range(n_assets):
-        ef = sma_seeded_ema(prices[:, i], fast_span)
-        es = sma_seeded_ema(prices[:, i], slow_span)
-        diff = ef - es
-        valid = ~np.isnan(ef) & ~np.isnan(es)
-        signal[valid, i] = np.sign(diff[valid])
-
-    alpha_vol = 2.0 / (vol_lookback + 1)
-    ewma_var = np.zeros((n_ret, n_assets))
-    ewma_var[0] = returns[0] ** 2
-    for t in range(1, n_ret):
-        ewma_var[t] = alpha_vol * returns[t] ** 2 + (1.0 - alpha_vol) * ewma_var[t - 1]
-    ann_vol_ts = np.sqrt(ewma_var * annualization)
-
-    positions = np.zeros((n_ret, n_assets))
-    for t in range(1, n_ret):
-        sig = signal[t]
-        av = ann_vol_ts[t - 1]
-        safe_vol = np.where(av > 1e-10, av, 1e-10)
-        vt = vol_targets[t] if hasattr(vol_targets, '__len__') else vol_targets
-        pos = sig * (vt / safe_vol) * (1.0 / n_assets)
-        pos = np.clip(pos, -max_lev, max_lev)
-        positions[t] = pos
-
-    portfolio_returns = np.sum(positions * returns, axis=1)
-
-    daily_rf = rf_annual / annualization
-    mean_ret = float(np.mean(portfolio_returns))
-    std_ret = float(np.std(portfolio_returns, ddof=1))
-    ann_ret = mean_ret * annualization
-    ann_vol = std_ret * math.sqrt(annualization)
-    sharpe = (mean_ret - daily_rf) / std_ret * math.sqrt(annualization) if std_ret > 0 else 0.0
-
-    cum_wealth = np.exp(np.cumsum(portfolio_returns))
-    running_max = np.maximum.accumulate(cum_wealth)
-    dd = (running_max - cum_wealth) / running_max
-    max_dd = float(np.max(dd))
-    calmar = ann_ret / max_dd if max_dd > 0 else 0.0
-
-    avg_abs_lev = float(np.mean(np.sum(np.abs(positions), axis=1)))
-
+        fast = sma_seeded_ema(prices[:, i], fast_span)
+        slow = sma_seeded_ema(prices[:, i], slow_span)
+        valid = np.isfinite(fast) & np.isfinite(slow)
+        signals[valid, i] = np.where(fast[valid] > slow[valid], 1.0, -1.0)
+    a = 2.0 / (vol_lookback + 1)
+    variance = np.empty_like(returns)
+    variance[0] = returns[0] ** 2
+    for k in range(1, len(returns)):
+        variance[k] = a * returns[k] ** 2 + (1-a) * variance[k-1]
+    targets = np.broadcast_to(np.asarray(vol_targets), (len(returns),))
+    close_weights = signals[1:] * targets[:, None] / n_assets / np.sqrt(annualization * variance)
+    close_weights = np.clip(close_weights, -max_lev, max_lev)
+    positions = np.vstack([np.zeros(n_assets), close_weights[:-1]])
+    x = np.sum(positions * returns, axis=1)
+    if drop_warmup:
+        x = x[slow_span-1:]
+        positions = positions[slow_span-1:]
+    log_return = float(annualization * np.mean(x))
+    ann_return = float(np.expm1(log_return)) if geometric_return else log_return
+    ann_vol = float(np.std(x, ddof=ddof) * math.sqrt(annualization))
+    wealth = np.exp(np.r_[0.0, np.cumsum(x)])
+    drawdown = float(np.max(1 - wealth / np.maximum.accumulate(wealth)))
     return {
-        'annualized_return': float(ann_ret),
-        'annualized_volatility': float(ann_vol),
-        'sharpe_ratio': float(sharpe),
-        'max_drawdown': float(max_dd),
-        'calmar_ratio': float(calmar),
-        'avg_abs_leverage': float(avg_abs_lev),
-        'portfolio_returns': portfolio_returns,
+        'annualized_return': ann_return, 'annualized_volatility': ann_vol,
+        'sharpe_ratio': (log_return - rf_annual) / ann_vol,
+        'max_drawdown': -drawdown if geometric_return else drawdown,
+        'calmar_ratio': ann_return / drawdown,
+        'avg_abs_leverage': float(np.mean(np.abs(positions).sum(axis=1))),
+        'portfolio_returns': x,
     }
 
 
@@ -184,159 +175,51 @@ def garch_multistep_forecast(omega, alpha, beta, last_ret, last_h, holding_perio
 
 def _bgv_pipeline(S0, K, B, r, T, confidence_level, n_contracts,
                    garch_vol, omega, alpha, beta, persistence, long_run_variance,
-                   vol_of_vol, fd_dS_pct=0.01, fd_dsigma=0.01,
-                   decomp_method='squared'):
-    """Run BGV pipeline from garch_vol onward. Returns deliverables + checkpoints dicts.
-
-    vol_of_vol: annualized realized vol-of-vol from the GARCH conditional-volatility
-        time series — std of daily changes in σ_t × √252.
-    fd_dS_pct: relative bump size for delta/gamma central finite differences,
-        as a fraction of S0 (default 1% — typical risk-system convention).
-    fd_dsigma: absolute bump size for vega central finite differences, in
-        annualized vol units (default 0.01 — 1 vol point — typical convention).
-    decomp_method: 'squared' (variance-based) or 'linear' (simple attribution).
+                   vol_of_vol, fd_dS_pct=0.01, fd_dsigma=0.01):
+    """Centered Gaussian quadratic moments; vol_of_vol is a DAILY change
+    in the annualized volatility argument. Return normal-moment relative VaR.
     """
-    sigma = garch_vol
-    H = B
-    analytical_price = barrier_option_price(S0, K, T, r, sigma, H)
-
-    dS = fd_dS_pct * S0
-    price_up = barrier_option_price(S0 + dS, K, T, r, sigma, H)
-    price_dn = barrier_option_price(S0 - dS, K, T, r, sigma, H)
-    delta = (price_up - price_dn) / (2 * dS)
-    gamma = (price_up - 2 * analytical_price + price_dn) / (dS ** 2)
-
-    dsigma = fd_dsigma
-    price_sig_up = barrier_option_price(S0, K, T, r, sigma + dsigma, H)
-    price_sig_dn = barrier_option_price(S0, K, T, r, max(sigma - dsigma, 1e-6), H)
-    vega = (price_sig_up - price_sig_dn) / (2 * dsigma)
-
-    z = abs(norm.ppf(1.0 - confidence_level))
-    daily_vol = garch_vol / math.sqrt(252)
-    delta_S_vol = S0 * daily_vol
-    daily_vol_of_vol = vol_of_vol / math.sqrt(252)
-
-    delta_var = abs(n_contracts * delta * z * delta_S_vol)
-    gamma_var = 0.5 * abs(n_contracts * gamma * (z * delta_S_vol) ** 2)
-    vega_var = abs(n_contracts * vega * z * daily_vol_of_vol)
-
-    if decomp_method == 'squared':
-        portfolio_var = math.sqrt(delta_var ** 2 + gamma_var ** 2 + vega_var ** 2)
-        total_sq = delta_var ** 2 + gamma_var ** 2 + vega_var ** 2
-        if total_sq > 0:
-            delta_var_pct = delta_var ** 2 / total_sq * 100.0
-            gamma_var_pct = gamma_var ** 2 / total_sq * 100.0
-            vega_var_pct = vega_var ** 2 / total_sq * 100.0
-        else:
-            delta_var_pct = gamma_var_pct = vega_var_pct = 0.0
-    else:  # linear
-        portfolio_var = delta_var + gamma_var + vega_var
-        total_lin = delta_var + gamma_var + vega_var
-        if total_lin > 0:
-            delta_var_pct = delta_var / total_lin * 100.0
-            gamma_var_pct = gamma_var / total_lin * 100.0
-            vega_var_pct = vega_var / total_lin * 100.0
-        else:
-            delta_var_pct = gamma_var_pct = vega_var_pct = 0.0
-
-    deliverables = [
-        {'name': 'portfolio_var', 'value': portfolio_var, 'path': 'results.json:portfolio_var', 'tolerance': {'rtol': 0.05, 'atol': 0.1}},
-        {'name': 'delta_var_pct', 'value': delta_var_pct, 'path': 'results.json:delta_var_pct', 'tolerance': {'rtol': 0.05, 'atol': 1.0}},
-        {'name': 'gamma_var_pct', 'value': gamma_var_pct, 'path': 'results.json:gamma_var_pct', 'tolerance': {'rtol': 0.1, 'atol': 1.0}},
-        {'name': 'vega_var_pct', 'value': vega_var_pct, 'path': 'results.json:vega_var_pct', 'tolerance': {'rtol': 0.1, 'atol': 1.0}},
-    ]
-
-    checkpoints = {
-        'garch_omega': {'value': omega, 'concept': 'vol.garch', 'domain': 'DV', 'tolerance': {'rtol': 0.15}, 'siblings': {}},
-        'garch_alpha': {'value': alpha, 'concept': 'vol.garch', 'domain': 'DV', 'tolerance': {'rtol': 0.15}, 'siblings': {}},
-        'garch_beta': {'value': beta, 'concept': 'vol.garch', 'domain': 'DV', 'tolerance': {'rtol': 0.05}, 'siblings': {}},
-        'garch_persistence': {'value': persistence, 'concept': 'vol.garch', 'domain': 'DV', 'tolerance': {'rtol': 0.1}, 'siblings': {}},
-        'long_run_variance': {'value': long_run_variance, 'concept': 'vol.garch', 'domain': 'DV', 'tolerance': {'rtol': 0.1}, 'siblings': {}},
-        'garch_vol': {'value': garch_vol, 'concept': 'vol.garch', 'domain': 'DV', 'tolerance': {'rtol': 0.05}, 'siblings': {}},
-        'analytical_price': {'value': analytical_price, 'concept': 'dv.barrier_option', 'domain': 'DV', 'tolerance': {'rtol': 0.02, 'atol': 0.1}, 'siblings': {}},
-        'delta': {'value': delta, 'concept': 'dv.bsm_analytical', 'domain': 'DV', 'tolerance': {'rtol': 0.02, 'atol': 0.01}, 'siblings': {}},
-        'gamma': {'value': gamma, 'concept': 'dv.bsm_analytical', 'domain': 'DV', 'tolerance': {'rtol': 0.05, 'atol': 0.001}, 'siblings': {}},
-        'vega': {'value': vega, 'concept': 'dv.bsm_analytical', 'domain': 'DV', 'tolerance': {'rtol': 0.05, 'atol': 0.01}, 'siblings': {}},
-    }
-
-    return deliverables, checkpoints
+    def price(spot, vol):
+        return barrier_option_price(spot, K, T, r, vol, B)
+    value = price(S0, garch_vol)
+    ds = fd_dS_pct * S0
+    delta = (price(S0+ds, garch_vol) - price(S0-ds, garch_vol)) / (2*ds)
+    gamma = (price(S0+ds, garch_vol) - 2*value + price(S0-ds, garch_vol)) / ds**2
+    vega = (price(S0, garch_vol+fd_dsigma) - price(S0, garch_vol-fd_dsigma)) / (2*fd_dsigma)
+    s2 = S0**2 * garch_vol**2 / 252
+    components = np.array([delta**2*s2, 0.5*gamma**2*s2**2,
+                           vega**2*vol_of_vol**2])
+    values = dict(zip(['delta_var_pct', 'gamma_var_pct', 'vega_var_pct'],
+                      100*components/components.sum()))
+    values['portfolio_var'] = abs(n_contracts)*norm.ppf(confidence_level)*np.sqrt(components.sum())
+    cp = {'garch_omega': omega, 'garch_alpha': alpha, 'garch_beta': beta,
+          'garch_persistence': persistence, 'long_run_variance': long_run_variance,
+          'garch_vol': garch_vol, 'analytical_price': value,
+          'delta': delta, 'gamma': gamma, 'vega': vega}
+    return values, cp
 
 
 def regenerate_bgv():
-    task_dir = os.path.join(BASE, 'barrier-garch-var')
-    data_dir = os.path.join(task_dir, 'environment', 'data')
-
-    with open(os.path.join(data_dir, 'params.json')) as f:
-        params = json.load(f)
-    df = pd.read_csv(os.path.join(data_dir, 'returns.csv'))
-    returns = df['log_return'].values
-
-    S0 = params['S0']
-    K = params['K']
-    B = params['B']
-    r = params['r']
-    T = params['T']
-    confidence_level = params['confidence_level']
-    n_contracts = params['n_contracts']
-    fd_dS_pct = params.get('fd_dS_pct', 0.01)
-    fd_dsigma = params.get('fd_dsigma', 0.01)
-
-    # Phase 1: GARCH
-    fit = fit_garch_arch(returns)
-    omega = fit['omega']
-    alpha = fit['alpha']
-    beta = fit['beta']
-    persistence = fit['persistence']
-    long_run_variance = fit['long_run_variance']
-    cond_var_last = float(fit['cond_var'][-1])
-
-    # Two vol variants
-    vol_conditional = math.sqrt(cond_var_last * 252)
-    vol_unconditional = math.sqrt(long_run_variance * 252)
-
-    # Realized vol-of-vol from the GARCH conditional-volatility time series.
-    # Replaces the prior heuristic σ_σ = 0.10 × garch_vol with an empirically
-    # derived value: the annualized standard deviation of daily changes in
-    # the conditional volatility series.
-    cond_vol_series = np.sqrt(fit['cond_var'] * 252)
-    daily_cond_vol_changes = np.diff(cond_vol_series)
-    vol_of_vol = float(np.std(daily_cond_vol_changes, ddof=1) * math.sqrt(252))
-
-    print(f"\n=== barrier-garch-var ===")
-    print(f"  omega={omega:.10e}, alpha={alpha:.6f}, beta={beta:.6f}")
-    print(f"  persistence={persistence:.6f}, LRV={long_run_variance:.10e}")
-    print(f"  vol_conditional={vol_conditional:.6f}, vol_unconditional={vol_unconditional:.6f}")
-    print(f"  realized_vol_of_vol={vol_of_vol:.6f}")
-
-    # Single path: conditional vol × squared variance decomposition.
-    # Both axes are pinned in the spec (conditional GARCH vol from final
-    # observation; variance shares summing to 100%); the prior alt_paths
-    # for unconditional vol and linear-share decomposition were dropped
-    # because they contradict the pinned conventions rather than
-    # representing defensible alternative practitioner choices.
-    common_args = dict(S0=S0, K=K, B=B, r=r, T=T, confidence_level=confidence_level,
-                       n_contracts=n_contracts, omega=omega, alpha=alpha, beta=beta,
-                       persistence=persistence, long_run_variance=long_run_variance,
-                       vol_of_vol=vol_of_vol,
-                       fd_dS_pct=fd_dS_pct, fd_dsigma=fd_dsigma)
-
-    d, c = _bgv_pipeline(garch_vol=vol_conditional, decomp_method='squared', **common_args)
-    paths = [{
-        'name': 'primary',
-        'description': 'vol=conditional (sqrt(cond_var[-1]*252)), decomp=squared',
-        'primary': True,
-        'deliverables': d,
-        'checkpoints': c,
-    }]
-
-    print(f"  garch_vol={vol_conditional:.6f}")
-    print(f"  analytical_price={c['analytical_price']['value']:.6f}")
-    print(f"  delta={c['delta']['value']:.6f}, gamma={c['gamma']['value']:.6f}, vega={c['vega']['value']:.6f}")
-    print(f"  portfolio_var={d[0]['value']:.6f}")
-    print(f"  delta_var_pct={d[1]['value']:.2f}, gamma_var_pct={d[2]['value']:.2f}, vega_var_pct={d[3]['value']:.2f}")
-
-    write_refs_multipath(task_dir, paths, d, c,
-                         'barrier-garch-var', ['DV', 'VOL', 'RISK'])
+    task = os.path.join(BASE, 'barrier-garch-var')
+    with open(os.path.join(task, 'environment/data/params.json')) as f:
+        p = json.load(f)
+    x = pd.read_csv(os.path.join(task, 'environment/data/returns.csv')).log_return.to_numpy()
+    fit = fit_garch_arch(x)
+    if fit['long_run_variance'] is None:
+        raise RuntimeError('Full-sample GARCH must be stationary')
+    values, cp = _bgv_pipeline(**p, garch_vol=math.sqrt(252*fit['h_next']),
+        omega=fit['omega'], alpha=fit['alpha'], beta=fit['beta'],
+        persistence=fit['persistence'], long_run_variance=fit['long_run_variance'],
+        vol_of_vol=float(np.std(np.diff(np.sqrt(252*fit['cond_var'])), ddof=1)))
+    tolerances = {'portfolio_var': {'rtol': 0.002},
+                  'delta_var_pct': {'atol': 0.05},
+                  'gamma_var_pct': {'atol': 0.005},
+                  'vega_var_pct': {'atol': 0.05}}
+    cp_tol = {k: {'rtol': 0.002} for k in cp}
+    cp_tol.update({k: {'rtol': 0.03} for k in ['garch_omega', 'garch_alpha']})
+    cp_tol['long_run_variance'] = {'rtol': 0.01}
+    _write_canonical_refs(task, values, cp, tolerances, cp_tol)
+    return {'values': values, 'checkpoints': cp, 'fit': fit}
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -344,7 +227,7 @@ def regenerate_bgv():
 # ═══════════════════════════════════════════════════════════════════
 
 def _snr_pipeline(S0, K, B, r, T, notional, participation, garch_vol,
-                   omega, alpha, beta, persistence, long_run_variance):
+                   omega, alpha, beta, persistence, long_run_variance, delta_bump=0.01):
     """Run SNR pipeline from garch_vol onward. Returns deliverables + checkpoints."""
     bond_pv = notional * math.exp(-r * T)
     n_options = participation * notional / S0
@@ -360,7 +243,7 @@ def _snr_pipeline(S0, K, B, r, T, notional, participation, garch_vol,
     except ValueError:
         breakeven_vol = float('nan')
 
-    dS = 0.01 * S0
+    dS = delta_bump * S0
     price_up = barrier_option_price(S0 + dS, K, T, r, garch_vol, B)
     price_dn = barrier_option_price(S0 - dS, K, T, r, garch_vol, B)
     option_delta = (price_up - price_dn) / (2.0 * dS)
@@ -370,7 +253,7 @@ def _snr_pipeline(S0, K, B, r, T, notional, participation, garch_vol,
     z_99 = abs(norm.ppf(0.01))
     note_var_99 = z_99 * abs(note_delta) * S0 * daily_vol
     phi_z = norm.pdf(z_99)
-    note_es_99 = note_var_99 * phi_z / 0.01
+    note_es_99 = abs(note_delta) * S0 * daily_vol * phi_z / 0.01
 
     deliverables = [
         {'name': 'fair_value', 'value': fair_value, 'path': 'results.json:fair_value', 'tolerance': {'rtol': 0.02, 'atol': 1.0}},
@@ -409,6 +292,43 @@ def _snr_pipeline(S0, K, B, r, T, notional, participation, garch_vol,
     return deliverables, checkpoints
 
 
+def _snr_sample_variance_fit(returns):
+    """Zero-mean Gaussian GARCH with h0=population sample variance."""
+    y = np.asarray(returns, dtype=float) * 100
+    initial = float(np.var(y))
+
+    def conditional_variance(parameters):
+        omega, alpha, beta = parameters
+        h = np.empty(len(y))
+        h[0] = initial
+        for i in range(1, len(y)):
+            h[i] = omega + alpha * y[i - 1] ** 2 + beta * h[i - 1]
+        return h
+
+    def objective(parameters):
+        omega, alpha, beta = parameters
+        if omega <= 0 or min(alpha, beta) < 0 or alpha + beta >= 1:
+            return 1e20
+        h = conditional_variance(parameters)
+        return .5 * float(np.sum(np.log(h) + y * y / h))
+
+    fits = [minimize(objective, start, method='SLSQP',
+                    bounds=[(1e-8, 10), (0, .999), (0, .999)],
+                    constraints=[{'type': 'ineq', 'fun': lambda x: .999999 - x[1] - x[2]}],
+                    options={'ftol': 1e-11, 'maxiter': 2000})
+            for start in [[.02, .015, .975], [.2, .05, .8], [.05, .1, .8]]]
+    fits = [fit for fit in fits if fit.success and np.isfinite(fit.fun)]
+    if not fits:
+        raise RuntimeError('No converged sample-variance-initialized GARCH fit')
+    fit = min(fits, key=lambda item: item.fun)
+    omega, alpha, beta = map(float, fit.x)
+    omega /= 10000
+    persistence = alpha + beta
+    return dict(omega=omega, alpha=alpha, beta=beta, persistence=persistence,
+                long_run_variance=omega / (1 - persistence),
+                garch_vol=float(np.sqrt(252 * conditional_variance(fit.x)[-1]) / 100))
+
+
 def regenerate_snr():
     task_dir = os.path.join(BASE, 'structured-note-risk')
     data_dir = os.path.join(task_dir, 'environment', 'data')
@@ -433,6 +353,8 @@ def regenerate_snr():
     beta = fit['beta']
     persistence = fit['persistence']
     long_run_variance = fit['long_run_variance']
+    if long_run_variance is None or not 0 <= persistence < 1:
+        raise ValueError('Structured-note pricing requires a stationary GARCH fit.')
     cond_var_last = float(fit['cond_var'][-1])
 
     # Two vol variants
@@ -452,6 +374,9 @@ def regenerate_snr():
     for vol_name, vol_val in [('conditional', vol_conditional), ('unconditional', vol_unconditional)]:
         is_primary = (vol_name == 'conditional')
         d, c = _snr_pipeline(garch_vol=vol_val, **common_args)
+        for item in d:
+            if item['name'] in c:
+                assert item['value'] == c[item['name']]['value']
         paths.append({
             'name': 'primary' if is_primary else f'{vol_name}_vol',
             'description': f'vol={vol_name} ({"sqrt(cond_var[-1]*252)" if vol_name == "conditional" else "sqrt(LRV*252)"})',
@@ -466,317 +391,140 @@ def regenerate_snr():
             print(f"  fair_value={d[0]['value']:.6f}, markup_pct={d[1]['value']:.6f}")
             print(f"  note_var_99={d[2]['value']:.6f}, note_es_99={d[3]['value']:.6f}")
 
+    sample_fit = _snr_sample_variance_fit(returns)
+    for suffix, vol in [('', sample_fit['garch_vol']),
+                        ('_unconditional_vol', math.sqrt(252 * sample_fit['long_run_variance']))]:
+        values = dict(sample_fit, garch_vol=vol)
+        sample_d, sample_c = _snr_pipeline(
+            S0=S0, K=K, B=B, r=r, T=T, notional=notional,
+            participation=participation, delta_bump=1e-4, **values)
+        paths.append({'name': 'sample_variance_initialization' + suffix, 'primary': False,
+                      'description': 'Population sample-variance initialization; ' + ('long-run' if suffix else 'final conditional') + ' volatility',
+                      'deliverables': sample_d, 'checkpoints': sample_c})
     primary_d = paths[0]['deliverables']
     primary_c = paths[0]['checkpoints']
     write_refs_multipath(task_dir, paths, primary_d, primary_c,
                          'structured-note-risk', ['DV', 'VOL', 'RISK'])
+    for filename in ('expected.json', 'checkpoints.json'):
+        with open(os.path.join(task_dir, 'tests', 'reference_data', filename)) as f:
+            _write_json(os.path.join(task_dir, 'solution', filename), json.load(f))
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Task 3: cta-basel-capital (4 paths: ann×ret)
+# Task 3: cta-basel-capital (canonical strategy-risk capital proxy)
 # ═══════════════════════════════════════════════════════════════════
 
 def regenerate_cta():
-    task_dir = os.path.join(BASE, 'cta-basel-capital')
-    data_dir = os.path.join(task_dir, 'environment', 'data')
-
-    with open(os.path.join(data_dir, 'params.json')) as f:
-        params = json.load(f)
-    prices_df = pd.read_csv(os.path.join(data_dir, 'prices.csv'))
-    asset_cols = [c for c in prices_df.columns if c != 'date']
-    prices = prices_df[asset_cols].values
-
-    fast_ema = int(params['fast_ema'])
-    slow_ema = int(params['slow_ema'])
-    vol_lookback = int(params['vol_lookback'])
-    vol_target = float(params['vol_target'])
-    max_lev = float(params['max_leverage_per_asset'])
-    rf_annual = float(params['risk_free_annual'])
-    n_assets = int(params['n_assets'])
-    conf = float(params['confidence_level'])
-    holding_period = int(params['holding_period'])
-    multiplier = float(params['basel_multiplier'])
-
-    combos = [
-        {'annualization': 252, 'return_type': 'log'},
-        {'annualization': 252, 'return_type': 'arithmetic'},
-        {'annualization': 260, 'return_type': 'log'},
-        {'annualization': 260, 'return_type': 'arithmetic'},
-    ]
-
-    paths = []
-    primary_deliverables = None
-    primary_checkpoints = None
-
-    for idx, combo in enumerate(combos):
-        ann = combo['annualization']
-        ret_type = combo['return_type']
-        is_primary = (ann == 252 and ret_type == 'log')
-
-        # Compute returns
-        if ret_type == 'log':
-            returns = np.log(prices[1:] / prices[:-1])
-        else:
-            returns = (prices[1:] - prices[:-1]) / prices[:-1]
-        n_ret = len(returns)
-
-        # CTA strategy
-        static_targets = np.full(n_ret, vol_target)
-        perf = run_cta_strategy(
-            prices, returns, fast_ema, slow_ema, vol_lookback,
-            static_targets, max_lev, n_assets, rf_annual, annualization=ann,
-        )
-        portfolio_returns = perf['portfolio_returns']
-
-        # GARCH on portfolio returns
-        fit = fit_garch_arch(portfolio_returns)
-        omega = fit['omega']
-        alpha_g = fit['alpha']
-        beta_g = fit['beta']
-        persistence = fit['persistence']
-        long_run_var = fit['long_run_variance']
-        cond_var = fit['cond_var']
-
-        last_h = float(cond_var[-1])
-        last_ret = float(portfolio_returns[-1])
-
-        z_val = abs(float(norm.ppf(1.0 - conf)))
-
-        _, cum_var_normal = garch_multistep_forecast(
-            omega, alpha_g, beta_g, last_ret, last_h, holding_period
-        )
-        var_99 = z_val * math.sqrt(cum_var_normal)
-
-        # Stressed VaR (Basel-style historical lookback): rolling 250-day
-        # window over the portfolio return history. For each window, fit a
-        # fresh GARCH(1,1) and compute the multi-step conditional VaR at the
-        # window's end. Stressed VaR = max conditional VaR across windows.
-        STRESS_WINDOW = 250
-        rolling_vars = []
-        n_pr = len(portfolio_returns)
-        if n_pr >= STRESS_WINDOW:
-            for end_idx in range(STRESS_WINDOW, n_pr + 1):
-                window_rets = portfolio_returns[end_idx - STRESS_WINDOW:end_idx]
-                fit_w = fit_garch_arch(window_rets)
-                last_h_w = float(fit_w['cond_var'][-1])
-                last_ret_w = float(window_rets[-1])
-                _, cum_var_w = garch_multistep_forecast(
-                    fit_w['omega'], fit_w['alpha'], fit_w['beta'],
-                    last_ret_w, last_h_w, holding_period,
-                )
-                rolling_vars.append(z_val * math.sqrt(cum_var_w))
-            svar_99 = float(max(rolling_vars))
-        else:
-            svar_99 = var_99
-
-        var_component = multiplier * abs(var_99)
-        svar_component = multiplier * abs(svar_99)
-        capital_charge = var_component + svar_component
-
-        path_name = 'primary' if is_primary else f'ann{ann}_{ret_type}'
-        desc = f'annualization={ann}, return_type={ret_type}'
-
-        if is_primary:
-            print(f"\n=== cta-basel-capital (primary: {desc}) ===")
-            print(f"  omega={omega:.10e}, alpha={alpha_g:.6f}, beta={beta_g:.6f}")
-            print(f"  persistence={persistence:.6f}, LRV={long_run_var:.10e}")
-            print(f"  ann_ret={perf['annualized_return']:.6f}, ann_vol={perf['annualized_volatility']:.6f}")
-            print(f"  sharpe={perf['sharpe_ratio']:.6f}")
-            print(f"  var_99={var_99:.6f}, svar_99={svar_99:.6f}")
-            print(f"  capital_charge={capital_charge:.6f}")
-
-        path_deliverables = [
-            {'name': 'capital_charge', 'value': capital_charge, 'path': 'results.json:capital_charge', 'tolerance': {'rtol': 0.05, 'atol': 0.01}},
-            {'name': 'stressed_var', 'value': svar_99, 'path': 'results.json:stressed_var', 'tolerance': {'rtol': 0.05, 'atol': 0.005}},
-            {'name': 'var_component', 'value': var_component, 'path': 'results.json:var_component', 'tolerance': {'rtol': 0.05, 'atol': 0.01}},
-            {'name': 'svar_component', 'value': svar_component, 'path': 'results.json:svar_component', 'tolerance': {'rtol': 0.05, 'atol': 0.01}},
-        ]
-
-        path_checkpoints = {
-            'annualized_return': {'value': perf['annualized_return'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.15, 'atol': 0.005}, 'siblings': {}},
-            'annualized_volatility': {'value': perf['annualized_volatility'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.15, 'atol': 0.005}, 'siblings': {}},
-            'sharpe_ratio': {'value': perf['sharpe_ratio'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.20, 'atol': 0.02}, 'siblings': {}},
-            'max_drawdown': {'value': perf['max_drawdown'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.10, 'atol': perf['max_drawdown'] * 1.1}, 'siblings': {}},
-            'calmar_ratio': {'value': perf['calmar_ratio'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.25, 'atol': 0.02}, 'siblings': {}},
-            'avg_abs_leverage': {'value': perf['avg_abs_leverage'], 'concept': '', 'domain': 'PM', 'tolerance': {'rtol': 0.20, 'atol': 0.01}, 'siblings': {}},
-            'garch_omega': {'value': omega, 'concept': 'vol.garch', 'domain': 'PM', 'tolerance': {'rtol': 0.15}, 'siblings': {}},
-            'garch_alpha': {'value': alpha_g, 'concept': 'vol.garch', 'domain': 'PM', 'tolerance': {'rtol': 0.15}, 'siblings': {}},
-            'garch_beta': {'value': beta_g, 'concept': 'vol.garch', 'domain': 'PM', 'tolerance': {'rtol': 0.05}, 'siblings': {}},
-            'garch_persistence': {'value': persistence, 'concept': 'vol.garch', 'domain': 'PM', 'tolerance': {'rtol': 0.1}, 'siblings': {}},
-            'long_run_variance': {'value': long_run_var, 'concept': 'vol.garch', 'domain': 'PM', 'tolerance': {'rtol': 0.1}, 'siblings': {}},
-            'var_99': {'value': var_99, 'concept': 'risk.var', 'domain': 'PM', 'tolerance': {'rtol': 0.05, 'atol': 0.005}, 'siblings': {}},
-        }
-
-        path_entry = {
-            'name': path_name,
-            'description': desc,
-            'primary': is_primary,
-            'deliverables': path_deliverables,
-            'checkpoints': path_checkpoints,
-        }
-        paths.append(path_entry)
-
-        if is_primary:
-            primary_deliverables = path_deliverables
-            primary_checkpoints = path_checkpoints
-
-    write_refs_multipath(task_dir, paths, primary_deliverables, primary_checkpoints,
-                         'cta-basel-capital', ['PM', 'VOL', 'RISK', 'BK'])
+    task = os.path.join(BASE, 'cta-basel-capital')
+    with open(os.path.join(task, 'environment/data/params.json')) as f:
+        p = json.load(f)
+    prices = pd.read_csv(os.path.join(task, 'environment/data/prices.csv')).filter(like='asset_').to_numpy()
+    returns = np.log(prices[1:]/prices[:-1])
+    perf = run_cta_strategy(prices, returns, p['fast_ema'], p['slow_ema'],
+        p['vol_lookback'], p['vol_target'], p['max_leverage_per_asset'],
+        p['n_assets'], p['risk_free_annual'], drop_warmup=True)
+    x = perf['portfolio_returns']
+    fit = fit_garch_arch(x)
+    if fit['long_run_variance'] is None:
+        raise RuntimeError('Full-sample GARCH must be stationary')
+    z_h = norm.ppf(p['confidence_level']) * math.sqrt(p['holding_period'])
+    current = z_h * math.sqrt(fit['h_next'])
+    rolling = []
+    for end in range(250, len(x)+1):
+        f = fit_garch_arch(x[end-250:end])
+        rolling.append({'end': end, 'var': z_h*math.sqrt(f['h_next']),
+                        'loglikelihood': f['loglikelihood'],
+                        'converged_starts': f['converged_starts'],
+                        'likelihood_spread': f['likelihood_spread']})
+    stressed = max(w['var'] for w in rolling)
+    mult = p['basel_multiplier']
+    values = {'capital_charge': mult*(current+stressed), 'stressed_var': stressed,
+              'var_component': mult*current, 'svar_component': mult*stressed}
+    cp = {k: v for k, v in perf.items() if k != 'portfolio_returns'}
+    cp.update({'garch_omega': fit['omega'], 'garch_alpha': fit['alpha'],
+               'garch_beta': fit['beta'], 'garch_persistence': fit['persistence'],
+               'long_run_variance': fit['long_run_variance'], 'var_99': current})
+    cp_tol = {k: {'atol': 1e-5} for k in cp}
+    cp_tol.update({k: {'rtol': 0.02} for k in ['garch_omega', 'garch_alpha',
+                   'garch_beta', 'garch_persistence', 'long_run_variance']})
+    cp_tol['var_99'] = {'rtol': 0.005}
+    _write_canonical_refs(task, values, cp, {k: {'rtol': 0.005} for k in values}, cp_tol)
+    return {'values': values, 'checkpoints': cp, 'fit': fit,
+            'portfolio_returns': x, 'rolling_windows': rolling}
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Task 4: regime-cta-vol-target (4 paths: ann×ret)
+# Task 4: regime-cta-vol-target (canonical hindsight comparison)
 # ═══════════════════════════════════════════════════════════════════
 
 def regenerate_regime():
-    task_dir = os.path.join(BASE, 'regime-cta-vol-target')
-    data_dir = os.path.join(task_dir, 'environment', 'data')
+    task = os.path.join(BASE, 'regime-cta-vol-target')
+    with open(os.path.join(task, 'environment/data/params.json')) as f:
+        p = json.load(f)
+    prices = pd.read_csv(os.path.join(task, 'environment/data/prices.csv')).filter(like='asset_').to_numpy()
+    returns = np.log(prices[1:]/prices[:-1])
+    fits = [fit_garch_arch(returns[:, i]) for i in range(p['n_assets'])]
+    if any(f['long_run_variance'] is None for f in fits):
+        raise RuntimeError('Full-sample GARCH must be stationary')
+    composite = np.sqrt(252*np.mean([f['cond_var'] for f in fits], axis=0))
+    lo, hi = np.percentile(composite, [p['regime_lo_pct'], p['regime_hi_pct']])
+    low, high = composite <= lo, composite >= hi
+    scale = np.where(low, p['scale_low_vol'], np.where(high, p['scale_high_vol'], 1))
+    def performance(target):
+        return run_cta_strategy(prices, returns, p['fast_ema'], p['slow_ema'],
+            p['vol_lookback'], target, p['max_leverage_per_asset'],
+            p['n_assets'], p['risk_free_annual'], geometric_return=True, ddof=0)
+    static = performance(p['vol_target'])
+    dynamic = performance(p['vol_target']*scale)
+    values = {'dynamic_sharpe_ratio': dynamic['sharpe_ratio'],
+              'sharpe_improvement': dynamic['sharpe_ratio']-static['sharpe_ratio'],
+              'regime_frac_high': float(high.mean()),
+              'composite_vol_mean': float(composite.mean())}
+    cp = {f'{prefix}_{key}': perf[key] for prefix, perf in [('static', static), ('dynamic', dynamic)]
+          for key in ['annualized_return', 'annualized_volatility', 'max_drawdown', 'calmar_ratio']}
+    cp.update({'static_sharpe_ratio': static['sharpe_ratio'],
+               'avg_garch_persistence': float(np.mean([f['persistence'] for f in fits])),
+               'avg_long_run_variance': float(np.mean([f['long_run_variance'] for f in fits])),
+               'regime_frac_low': float(low.mean()), 'regime_frac_mid': float((~low & ~high).mean()),
+               'regime_thresh_lo': float(lo), 'regime_thresh_hi': float(hi)})
+    tol = {'dynamic_sharpe_ratio': {'atol': 0.002}, 'sharpe_improvement': {'atol': 0.002},
+           'regime_frac_high': {'atol': 1e-5}, 'composite_vol_mean': {'rtol': 0.002}}
+    cp_tol = {k: {'atol': 1e-5} for k in cp}
+    cp_tol.update({k: {'rtol': 0.002} for k in cp if k.startswith('dynamic_') or k.startswith('regime_thresh')})
+    cp_tol['dynamic_calmar_ratio'] = {'atol': 0.002}
+    cp_tol['dynamic_max_drawdown'] = {'atol': 0.0005}
+    cp_tol['avg_garch_persistence'] = {'rtol': 0.002}
+    cp_tol['avg_long_run_variance'] = {'rtol': 0.01}
+    _write_canonical_refs(task, values, cp, tol, cp_tol)
+    return {'values': values, 'checkpoints': cp, 'fits': fits,
+            'static_returns': static['portfolio_returns'],
+            'dynamic_returns': dynamic['portfolio_returns'], 'composite': composite}
 
-    with open(os.path.join(data_dir, 'params.json')) as f:
-        params = json.load(f)
-    prices_df = pd.read_csv(os.path.join(data_dir, 'prices.csv'))
-    asset_cols = [c for c in prices_df.columns if c.startswith('asset_')]
-    prices = prices_df[asset_cols].values
 
-    fast_span = params['fast_ema']
-    slow_span = params['slow_ema']
-    vol_lookback = params['vol_lookback']
-    vol_target_base = params['vol_target']
-    max_lev = params['max_leverage_per_asset']
-    rf_annual = params['risk_free_annual']
-    n_assets = params['n_assets']
-    regime_lo_pct = params['regime_lo_pct']
-    regime_hi_pct = params['regime_hi_pct']
-    scale_low = params['scale_low_vol']
-    scale_high = params['scale_high_vol']
+def _write_canonical_refs(task, values, cp, tolerances, cp_tolerances):
+    """Synchronize the oracle and checker from a single computation.
 
-    combos = [
-        {'annualization': 252, 'return_type': 'log'},
-        {'annualization': 252, 'return_type': 'arithmetic'},
-        {'annualization': 260, 'return_type': 'log'},
-        {'annualization': 260, 'return_type': 'arithmetic'},
-    ]
-
-    paths = []
-    primary_deliverables = None
-    primary_checkpoints = None
-
-    for idx, combo in enumerate(combos):
-        ann = combo['annualization']
-        ret_type = combo['return_type']
-        is_primary = (ann == 252 and ret_type == 'log')
-
-        # Compute returns
-        if ret_type == 'log':
-            returns = np.log(prices[1:] / prices[:-1])
-        else:
-            returns = (prices[1:] - prices[:-1]) / prices[:-1]
-        n_ret = returns.shape[0]
-
-        # Phase 1: GARCH per asset
-        per_asset_cond_var = np.zeros((n_ret, n_assets))
-        garch_persistences = []
-        garch_long_run_vars = []
-
-        for i in range(n_assets):
-            asset_returns = returns[:, i]
-            fit = fit_garch_arch(asset_returns)
-            garch_persistences.append(fit['persistence'])
-            garch_long_run_vars.append(fit['long_run_variance'])
-
-            per_asset_cond_var[:, i] = fit['cond_var']
-
-        avg_garch_persistence = float(np.mean(garch_persistences))
-        avg_long_run_variance = float(np.mean(garch_long_run_vars))
-
-        # Phase 2: Composite vol + regime classification
-        composite_var = np.mean(per_asset_cond_var, axis=1)
-        composite_vol = np.sqrt(composite_var * ann)
-        composite_vol_mean = float(np.mean(composite_vol))
-
-        thresh_lo = float(np.percentile(composite_vol, regime_lo_pct))
-        thresh_hi = float(np.percentile(composite_vol, regime_hi_pct))
-
-        regime_labels = np.ones(n_ret, dtype=int)
-        regime_labels[composite_vol <= thresh_lo] = 0
-        regime_labels[composite_vol >= thresh_hi] = 2
-
-        regime_frac_low = float(np.mean(regime_labels == 0))
-        regime_frac_mid = float(np.mean(regime_labels == 1))
-        regime_frac_high = float(np.mean(regime_labels == 2))
-
-        # Dynamic vol targets
-        dynamic_vol_targets = np.full(n_ret, vol_target_base)
-        dynamic_vol_targets[regime_labels == 0] = vol_target_base * scale_low
-        dynamic_vol_targets[regime_labels == 2] = vol_target_base * scale_high
-
-        # Phase 3: CTA ×2
-        static_targets = np.full(n_ret, vol_target_base)
-
-        static_result = run_cta_strategy(
-            prices, returns, fast_span, slow_span, vol_lookback,
-            static_targets, max_lev, n_assets, rf_annual, annualization=ann,
-        )
-        dynamic_result = run_cta_strategy(
-            prices, returns, fast_span, slow_span, vol_lookback,
-            dynamic_vol_targets, max_lev, n_assets, rf_annual, annualization=ann,
-        )
-
-        sharpe_improvement = dynamic_result['sharpe_ratio'] - static_result['sharpe_ratio']
-
-        path_name = 'primary' if is_primary else f'ann{ann}_{ret_type}'
-        desc = f'annualization={ann}, return_type={ret_type}'
-
-        if is_primary:
-            print(f"\n=== regime-cta-vol-target (primary: {desc}) ===")
-            print(f"  avg_garch_persistence={avg_garch_persistence:.6f}")
-            print(f"  avg_long_run_variance={avg_long_run_variance:.10e}")
-            print(f"  composite_vol_mean={composite_vol_mean:.6f}")
-            print(f"  regime_frac: low={regime_frac_low:.4f} mid={regime_frac_mid:.4f} high={regime_frac_high:.4f}")
-            print(f"  static_sharpe={static_result['sharpe_ratio']:.6f}")
-            print(f"  dynamic_sharpe={dynamic_result['sharpe_ratio']:.6f}")
-            print(f"  sharpe_improvement={sharpe_improvement:.6f}")
-
-        path_deliverables = [
-            {'name': 'dynamic_sharpe_ratio', 'value': dynamic_result['sharpe_ratio'], 'path': 'results.json:dynamic_sharpe_ratio', 'tolerance': {'rtol': 0.05, 'atol': 0.02}},
-            {'name': 'sharpe_improvement', 'value': sharpe_improvement, 'path': 'results.json:sharpe_improvement', 'tolerance': {'rtol': 0.1, 'atol': 0.02}},
-            {'name': 'regime_frac_high', 'value': regime_frac_high, 'path': 'results.json:regime_frac_high', 'tolerance': {'rtol': 0.05, 'atol': 0.01}},
-            {'name': 'composite_vol_mean', 'value': composite_vol_mean, 'path': 'results.json:composite_vol_mean', 'tolerance': {'rtol': 0.05, 'atol': 0.005}},
-        ]
-
-        path_checkpoints = {
-            'static_annualized_return': {'value': static_result['annualized_return'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.15, 'atol': 0.005}, 'siblings': {}},
-            'static_annualized_volatility': {'value': static_result['annualized_volatility'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.15, 'atol': 0.005}, 'siblings': {}},
-            'static_sharpe_ratio': {'value': static_result['sharpe_ratio'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.20, 'atol': 0.02}, 'siblings': {}},
-            'static_max_drawdown': {'value': static_result['max_drawdown'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.10, 'atol': static_result['max_drawdown'] * 1.1}, 'siblings': {}},
-            'static_calmar_ratio': {'value': static_result['calmar_ratio'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.25, 'atol': 0.02}, 'siblings': {}},
-            'dynamic_annualized_return': {'value': dynamic_result['annualized_return'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.15, 'atol': 0.005}, 'siblings': {}},
-            'dynamic_annualized_volatility': {'value': dynamic_result['annualized_volatility'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.15, 'atol': 0.005}, 'siblings': {}},
-            'dynamic_max_drawdown': {'value': dynamic_result['max_drawdown'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.10, 'atol': dynamic_result['max_drawdown'] * 1.1}, 'siblings': {}},
-            'dynamic_calmar_ratio': {'value': dynamic_result['calmar_ratio'], 'concept': 'pm.performance_metrics', 'domain': 'PM', 'tolerance': {'rtol': 0.25, 'atol': 0.02}, 'siblings': {}},
-            'avg_garch_persistence': {'value': avg_garch_persistence, 'concept': 'vol.garch', 'domain': 'PM', 'tolerance': {'rtol': 0.05}, 'siblings': {}},
-            'avg_long_run_variance': {'value': avg_long_run_variance, 'concept': 'vol.garch', 'domain': 'PM', 'tolerance': {'rtol': 0.1}, 'siblings': {}},
-            'regime_frac_low': {'value': regime_frac_low, 'concept': '', 'domain': 'PM', 'tolerance': {'rtol': 0.05, 'atol': 0.01}, 'siblings': {}},
-            'regime_frac_mid': {'value': regime_frac_mid, 'concept': '', 'domain': 'PM', 'tolerance': {'rtol': 0.05, 'atol': 0.01}, 'siblings': {}},
-            'regime_thresh_lo': {'value': thresh_lo, 'concept': '', 'domain': 'PM', 'tolerance': {'rtol': 0.05, 'atol': 0.005}, 'siblings': {}},
-            'regime_thresh_hi': {'value': thresh_hi, 'concept': '', 'domain': 'PM', 'tolerance': {'rtol': 0.05, 'atol': 0.005}, 'siblings': {}},
-        }
-
-        path_entry = {
-            'name': path_name,
-            'description': desc,
-            'primary': is_primary,
-            'deliverables': path_deliverables,
-            'checkpoints': path_checkpoints,
-        }
-        paths.append(path_entry)
-
-        if is_primary:
-            primary_deliverables = path_deliverables
-            primary_checkpoints = path_checkpoints
-
-    write_refs_multipath(task_dir, paths, primary_deliverables, primary_checkpoints,
-                         'regime-cta-vol-target', ['PM', 'VOL'])
+    These three tasks have one explicitly specified convention. The empty
+    alternative list routes grading to expected.json/checkpoints.json.
+    """
+    ref = os.path.join(task, 'tests/reference_data')
+    with open(os.path.join(ref, 'expected.json')) as f:
+        expected = json.load(f)
+    with open(os.path.join(ref, 'checkpoints.json')) as f:
+        checkpoints = json.load(f)
+    with open(os.path.join(task, 'environment/data/params.json')) as f:
+        expected['parameters'] = json.load(f)
+    for d in expected['deliverables']:
+        d['value'] = float(values[d['name']])
+        d['tolerance'] = tolerances[d['name']]
+    for name, entry in checkpoints['checkpoints'].items():
+        entry['value'] = float(cp[name])
+        entry['tolerance'] = cp_tolerances[name]
+        entry['siblings'] = {}
+    for folder in [ref, os.path.join(task, 'solution')]:
+        _write_json(os.path.join(folder, 'expected.json'), expected)
+        _write_json(os.path.join(folder, 'checkpoints.json'), checkpoints)
+    _write_json(os.path.join(ref, 'alt_paths.json'), {'paths': []})
 
 
 # ═══════════════════════════════════════════════════════════════════
