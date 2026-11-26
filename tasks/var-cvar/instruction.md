@@ -26,6 +26,8 @@ Compute the following and save results to `/app/output/`.
 Compute daily portfolio returns as the weighted sum:
 `r_p = Σ w_i · r_i`
 
+Assume the portfolio is rebalanced to the specified weights at the start of each observed day. Use simple daily returns, with no costs or external cash flows. Use linear interpolation for sample percentiles and at least eight significant digits for all computed values.
+
 ## 2. Parametric VaR (Normal Assumption)
 
 Using the sample mean (μ) and sample standard deviation (σ, with ddof=1) of
@@ -56,7 +58,7 @@ Use `<=` (inclusive) for selecting tail returns.
 ## 6. Max Drawdown
 
 From cumulative portfolio wealth `W_t = cumprod(1 + r_p)`, compute:
-`max_drawdown = max((peak - W_t) / peak)` where peak is the running maximum.
+`max_drawdown = max((peak - W_t) / peak)` where the running peak includes initial wealth of 1 immediately before the first return.
 
 ## 7. Correlation Matrix
 

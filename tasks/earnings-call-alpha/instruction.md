@@ -27,6 +27,8 @@ You are given the following data files:
 | `ticker`     | Firm identifier       |
 | `event_date` | Earnings call date    |
 
+Use exact lowercase whitespace tokens for dictionary lookup; leave punctuation attached. Count vowel runs on the same tokens. Keep unrounded scores, returns and regressors until writing outputs. Report the sample standard deviation (ddof=1) and rank with alphabetical ticker as the tie-breaker. Either ordering within a reported long or short basket is acceptable.
+
 ## Task
 
 ### Step 1 — Transcript Scoring
@@ -58,11 +60,13 @@ post_earnings_return ~ intercept + net_sentiment + uncertainty_score + fog_index
 ```
 Report the regression coefficients and R².
 
-### Step 4 — Long-Short Portfolio
+### Step 4 — Event-window return spread
 1. Sort firms by `net_sentiment` (descending).
 2. **Long** the top 5 firms (highest net sentiment).
 3. **Short** the bottom 5 firms (lowest net sentiment).
-4. Compute **long-short return**: `mean(long returns) - mean(short returns)`.
+4. Compute the **descriptive event-window return spread**: `mean(long returns) - mean(short returns)`.
+
+The transcripts concern different event dates, and each return starts before its call. Interpret the spread as a retrospective association across events. These baskets could not have been selected and traded at those starting prices using the transcripts. The response is a raw six-session event-window return, including the announcement.
 
 ## Output
 
@@ -91,6 +95,6 @@ Report the regression coefficients and R².
 | `mean_fog_index`           | float  | Mean Fog index                        |
 | `regression_coefficients`  | object | {"intercept", "net_sentiment", "uncertainty", "fog_index"} |
 | `r_squared`                | float  | R² of the regression                  |
-| `long_short_return`        | float  | Long-short portfolio return           |
+| `long_short_return`        | float  | Top-minus-bottom mean raw event-window return           |
 | `long_tickers`             | list   | Top 5 tickers by sentiment            |
 | `short_tickers`            | list   | Bottom 5 tickers by sentiment         |

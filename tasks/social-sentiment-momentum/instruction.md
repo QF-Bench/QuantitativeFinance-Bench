@@ -64,22 +64,22 @@ For each (date, ticker) pair:
 ### Step 3 — Momentum Signal
 For each trading date (starting from `momentum_lookback_days` days in):
 1. **Current day sentiment** = sum of weighted scores for today.
-2. **Past average** = mean of sum_weighted_score over the previous `momentum_lookback_days` days.
+2. **Past average** = mean over the previous `momentum_lookback_days` dates on the sorted price calendar, using zero for any date without posts for that ticker.
 3. `momentum_signal = current_sentiment - past_average`.
 4. **Volume filter**: skip tickers with fewer than `volume_filter_min_posts` posts on the current day.
 
 ### Step 4 — Long-Short Strategy
-Each day:
-1. Rank tickers by `momentum_signal` (descending).
-2. Go **long** the top `long_top_n` tickers.
-3. Go **short** the bottom `short_bottom_n` tickers.
-4. Equal weight across all positions: each position gets `1 / (long_top_n + short_bottom_n)` weight.
-5. Portfolio return = sum of position returns (short positions: negate the asset return).
-6. Apply transaction costs for new positions: `tc_bps / 10000` per position entered.
+Use full calendar-date post batches on the supplied price calendar. Today's final sentiment becomes available after today's close. Compute signal rows for every eligible ticker even on the last two dates. Preserve full precision while scoring and ranking. Compare scores tied at 12 decimal places by alphabetical ticker ascending.
 
-### Step 5 — Performance & Information Coefficient
-- Compute total return, annualized return, annualized volatility, Sharpe ratio, max drawdown.
-- **Information coefficient (IC)**: for each day, compute the Spearman rank correlation between `momentum_signal` and next-day returns across tickers. Report the mean IC and `IC_IR = mean_IC / std_IC`.
+For each signal date t from the first post-warm-up price date through the third-to-last price date, rank eligible names by descending score, then ticker. Enter at the next listed close (t+1) and realize the close-to-close return to t+2. Buy the first long_top_n tickers and short the last short_bottom_n. Each signed weight has magnitude 1/(long_top_n+short_bottom_n) of starting NAV. If too few names qualify, hold cash and clear previous memberships; record a zero return. Cash earns zero; borrowing and collateral earn zero.
+
+Apply the specified **entry fee model**: subtract transaction_cost_bps/10000 times the absolute target weight for each name newly entering that side versus the prior holding period. A reversal is a new entry on its new side. This exercise charges no exits, same-side resizes or end liquidation. Compound the daily net returns from initial_capital.
+
+### Step 5 — Performance and information coefficient
+
+Use 252 periods per year. For n holding periods report total NAV return, geometric annual return, sample net-return volatility times sqrt(252), and zero-rate Sharpe (sqrt(252) times mean daily net return divided by its sample standard deviation). Drawdown is the minimum of NAV/running peak minus one, including initial NAV. num_trading_days counts distinct dates in daily_signals.csv.
+
+For each signal date t with an executable t+1 to t+2 return, calculate the daily Spearman correlation across eligible tickers between the signal (rounded to 12 decimals for rank comparisons) and that same holding-period asset return. Average ranks for ties. Use dates with at least three observations and nonconstant ranks even if there are too few names for a portfolio. Report the arithmetic mean IC and its ratio to the sample standard deviation of daily ICs, without annualization.
 
 ## Output
 

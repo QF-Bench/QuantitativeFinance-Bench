@@ -43,10 +43,12 @@ Classify each observation based on the absorption ratio:
 - **risk-on**: absorption_ratio ≤ 0.45
 
 ### Step 4 — Regime-Conditional Allocation
-At each month-end rebalance date:
+At the last available classified trading date of each calendar month (including the final partial month), announce the following targets **after** the close, for the following holding period. The unallocated risk budget remains in cash.
 1. Look up the current regime.
 2. Apply the `risk_budget` scaling: allocate equal weight to all assets, scaled by the regime's risk budget.
    `weight_per_asset = risk_budget[regime] / N`
+
+Calculate from unrounded eigenvalues, use a sample standard deviation (ddof=1), and report zero for an absent regime, either explicitly or by omitting its count. Use the exact ratio N / rolling_window for the Marchenko–Pastur diagnostic; the rounded input ratio is informational. The threshold gives an independent-noise comparison, and the explicit absorption thresholds determine the labels.
 
 ## Output
 

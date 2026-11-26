@@ -14,7 +14,7 @@ You are given the following data files:
 | `close`  | Close price           |
 | `volume` | Trading volume        |
 
-**`/app/headlines.json`** — Array of news headlines (covers the second half of the price data, ~252 days):
+**`/app/headlines.json`** — Array of news headlines:
 
 | Field       | Description                    |
 |-------------|--------------------------------|
@@ -59,31 +59,24 @@ For each headline, compute a sentiment score:
 
 ### Step 2 — Daily Signal Construction
 For each ticker on each trading date:
-1. Collect all headlines for that ticker within the past `lookback_days` (inclusive of the current day).
+1. Collect all headlines for that ticker with calendar-day ages 0 through lookback_days−1, inclusive, using the date component of the supplied timestamps. Use lowercase whitespace tokens, keeping punctuation attached.
 2. Apply **exponential decay** weighting: `weight(d) = exp(-lambda * days_ago)` where `lambda = ln(2) / decay_halflife`.
 3. Compute the signal as the **weighted average** of sentiment scores: `signal = sum(score_i * weight_i) / sum(weight_i)`.
 4. If no headlines exist in the window, the signal is 0.
 
-### Step 3 — Position Sizing
-For each ticker on each trading date:
-- If `|signal| > entry_threshold`: set target position to `clip(signal, -max_position_pct, +max_position_pct)` (fraction of capital).
-- If `|signal| < exit_threshold`: set target position to 0 (exit).
-- Otherwise: hold current position (no change).
+### Step 3 — Signal timing and position sizing
 
-### Step 4 — Backtesting
-Starting with `initial_capital`:
-1. At end of each trading day, compute target positions based on today's signals.
-2. Compute next-day portfolio return: `sum(position_k * stock_return_k)` for all tickers.
-3. Subtract **transaction costs**: for each position change, apply `|trade_size| * transaction_cost_bps / 10000`.
-4. Update capital: `capital *= (1 + portfolio_return - transaction_cost)`.
+Signal dates are all price dates from the first headline date through the final price date. num_trade_dates counts these dates, including the last two. Use all headlines through the end of each signal date. Execute its targets at the following price date's open, then mark to the next open. Record only decisions for which both opens exist. The trade log date is the execution date. No future headline enters a signal.
 
-### Step 5 — Performance Metrics
-- **Total return**: `(final_capital / initial_capital) - 1`
-- **Annualized return**: `(1 + total_return)^(252 / num_trading_days) - 1`
-- **Annualized volatility**: `std(daily_returns, ddof=1) * sqrt(252)`
-- **Sharpe ratio**: `annualized_return / annualized_volatility`
-- **Max drawdown**: `min((portfolio_value - running_max) / running_max)`
-- **Win rate**: fraction of trading days with positive daily return.
+Start with zero holdings, cash earning zero, and the given capital. At each execution let old_position be the actual signed stock value divided by pretrade NAV. When |signal| exceeds entry_threshold, target the signal clipped to ±max_position_pct. When |signal| is below exit_threshold, target zero. Otherwise keep the existing stock holding (target the drifted old_position). All targets are fractions of NAV immediately before fees. Across lexicon categories sum every matching score.
+
+### Step 4 — Self-financing backtest
+
+For each date, trade_size = new_position − old_position. Record changes with |trade_size| > 1e-12. Charge proportional fees on total absolute traded notional; cash covers fees and any financing at zero interest. For asset open-to-open returns R and target weights w, the period net return is sum(w*R) minus (transaction_cost_bps/10000)*sum(abs(trade_size)). Compound NAV. The next period starts with drifted stock weights w*(1+R)/(1+net_return). At the final mark leave positions open. Ignore borrowing fees and dividends.
+
+### Step 5 — Performance metrics
+
+Use the number of realized holding periods for geometric annualization with 252 periods/year. Annual volatility is the sample standard deviation of daily net returns times sqrt(252). Sharpe uses a zero cash rate and arithmetic mean (sqrt(252) times mean daily net return divided by its sample standard deviation). Max drawdown is min(NAV/running peak − 1), including initial NAV. Win rate counts strictly positive net periods over all realized periods. Preserve full precision in the ledger and calculations.
 
 ## Output
 

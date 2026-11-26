@@ -41,6 +41,8 @@ Black-Scholes Greeks (with continuous dividend yield q):
 | vega  | `S·e^{-qT}·φ(d1)·√T` | same |
 | theta | `-S·e^{-qT}·φ(d1)·σ/(2√T) - r·K·e^{-rT}·N(d2) + q·S·e^{-qT}·N(d1)` | `-S·e^{-qT}·φ(d1)·σ/(2√T) + r·K·e^{-rT}·N(-d2) - q·S·e^{-qT}·N(-d1)` |
 
+Vega uses a unit change in absolute volatility and theta uses a year of elapsed calendar time. Report at least eight significant digits for all computed floating-point results.
+
 Where N(·) is the standard normal CDF and φ(·) is the standard normal PDF.
 
 ## 3. Put-Call Parity Check

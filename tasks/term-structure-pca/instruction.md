@@ -29,8 +29,7 @@ This produces `N-1` rows of yield changes from `N` clean observations.
    `np.cov(changes, rowvar=False, ddof=1)`.
 2. Compute eigenvalues and eigenvectors with `np.linalg.eigh`.
 3. Sort by eigenvalue **descending** (largest first).
-4. Extract the top 3 principal components (PC1 = level, PC2 = slope,
-   PC3 = curvature).
+4. Extract the top 3 principal components (ranked by decreasing explained variance).
 5. Variance explained (%) for each PC: `eigenvalue_i / sum(all eigenvalues) * 100`.
 
 ## Step 4: Factor Time Series
@@ -72,3 +71,5 @@ columns `PC1`, `PC2`, `PC3`. Save with `index=True`.
 | `eigenvalue_1`          | float | Largest eigenvalue                   |
 | `eigenvalue_2`          | float | Second eigenvalue                    |
 | `eigenvalue_3`          | float | Third eigenvalue                     |
+
+Use the ending observation date for each change, including changes across a gap left by cleaning. Either sign for each eigenvector is valid when its factor scores use the same sign. Report absolute shock projections and at least eight significant digits for floating-point outputs.
